@@ -18,7 +18,12 @@ jobs:
 
       - name: Install Flex and Bison
         shell: pwsh
-        run: choco install winflexbison3 --yes --no-progress
+        run: |
+          choco install winflexbison3 --yes --no-progress
+          $flex = (Get-Command win_flex.exe -ErrorAction Stop).Source
+          $bison = (Get-Command win_bison.exe -ErrorAction Stop).Source
+          "FLEX_EXECUTABLE=$flex" | Out-File $env:GITHUB_ENV -Append
+          "BISON_EXECUTABLE=$bison" | Out-File $env:GITHUB_ENV -Append
 
       - name: Install native dependencies
         shell: pwsh
@@ -35,6 +40,8 @@ jobs:
           -A x64
           -DDISCORD_ENABLED=OFF
           "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+          "-DFLEX_EXECUTABLE=$env:FLEX_EXECUTABLE"
+          "-DBISON_EXECUTABLE=$env:BISON_EXECUTABLE"
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build tests
