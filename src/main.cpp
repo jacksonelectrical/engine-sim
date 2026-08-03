@@ -1,7 +1,45 @@
 #include "../include/engine_sim_application.h"
 
 #include <iostream>
+#include <filesystem>
 #include <string>
+
+namespace {
+
+bool restartApplication(const std::string &scriptPath) {
+    char executablePath[MAX_PATH] = {};
+    if (GetModuleFileNameA(nullptr, executablePath, MAX_PATH) == 0) {
+        return false;
+    }
+
+    const std::filesystem::path executable(executablePath);
+    const std::string workingDirectory = executable.parent_path().string();
+    std::string commandLine =
+        "\"" + executable.string() + "\" \"" + scriptPath + "\"";
+
+    STARTUPINFOA startupInfo = {};
+    startupInfo.cb = sizeof(startupInfo);
+    PROCESS_INFORMATION processInfo = {};
+    const BOOL created = CreateProcessA(
+        executablePath,
+        commandLine.data(),
+        nullptr,
+        nullptr,
+        FALSE,
+        0,
+        nullptr,
+        workingDirectory.c_str(),
+        &startupInfo,
+        &processInfo);
+    if (created != FALSE) {
+        CloseHandle(processInfo.hThread);
+        CloseHandle(processInfo.hProcess);
+    }
+
+    return created != FALSE;
+}
+
+} // namespace
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
@@ -32,7 +70,12 @@ int WINAPI WinMain(
     }
     application.initialize((void *)&hInstance, ysContextObject::DeviceAPI::DirectX11);
     application.run();
+    const std::string restartScriptPath = application.getRestartScriptPath();
     application.destroy();
+
+    if (!restartScriptPath.empty()) {
+        restartApplication(restartScriptPath);
+    }
 
     return 0;
 }

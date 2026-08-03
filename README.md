@@ -48,8 +48,8 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | N + Scroll | Simulation frequency |
 | M | Increase view layer |
 | , | Decrease view layer |
-| Enter | Reload engine script |
-| L | Select and load an engine script |
+| Enter | Reload engine script in a fresh simulator process |
+| L | Select and load an engine script in a fresh simulator process |
 | Escape | Exit the program |
 | Q, W, E, R | Change throttle position |
 | Space + Scroll | Fine throttle adjustment |

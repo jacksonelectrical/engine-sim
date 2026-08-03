@@ -360,14 +360,16 @@ void EngineSimApplication::run() {
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Return)) {
-            reloadScript();
+            m_restartScriptPath = m_scriptPath;
+            break;
         }
 
         if (
             m_engine.ProcessKeyDown(ysKey::Code::L)
             && selectScriptPath())
         {
-            reloadScript();
+            m_restartScriptPath = m_scriptPath;
+            break;
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
@@ -683,30 +685,6 @@ bool EngineSimApplication::loadScript() {
     return true;
 }
 
-bool EngineSimApplication::reloadScript() {
-    if (m_audioSource != nullptr) {
-        m_audioSource->SetMode(ysAudioSource::Mode::Stop);
-    }
-
-    const bool loaded = loadScript();
-    if (
-        m_audioSource != nullptr
-        && m_simulator != nullptr
-        && m_simulator->getEngine() != nullptr)
-    {
-        m_audioSource->SetMode(ysAudioSource::Mode::Loop);
-    }
-
-    if (m_infoCluster != nullptr) {
-        m_infoCluster->setLogMessage(
-            loaded
-                ? "ENGINE LOADED: " + m_scriptPath
-                : "ENGINE LOAD FAILED; CURRENT ENGINE KEPT");
-    }
-
-    return loaded;
-}
-
 bool EngineSimApplication::selectScriptPath() {
 #ifdef _WIN32
     char filename[MAX_PATH] = {};
@@ -719,7 +697,8 @@ bool EngineSimApplication::selectScriptPath() {
     dialog.lpstrFile = filename;
     dialog.nMaxFile = MAX_PATH;
     dialog.lpstrInitialDir = "../assets";
-    dialog.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+    dialog.Flags =
+        OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 
     if (GetOpenFileNameA(&dialog) != FALSE) {
         m_scriptPath = filename;

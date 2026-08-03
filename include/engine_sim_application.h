@@ -40,6 +40,9 @@ class EngineSimApplication {
         static std::string getBuildVersion() { return s_buildVersion; }
 
         void setScriptPath(const std::string &path) { m_scriptPath = path; }
+        const std::string &getRestartScriptPath() const {
+            return m_restartScriptPath;
+        }
         void initialize(void *instance, ysContextObject::DeviceAPI api);
         void run();
         void destroy();
@@ -92,7 +95,6 @@ class EngineSimApplication {
 
     protected:
         bool loadScript();
-        bool reloadScript();
         bool selectScriptPath();
         void processEngineInput();
         void renderScene();
@@ -127,6 +129,7 @@ class EngineSimApplication {
 
         std::string m_assetPath;
         std::string m_scriptPath;
+        std::string m_restartScriptPath;
 
         ysRenderTarget *m_mainRenderTarget;
         ysGPUBuffer *m_geometryVertexBuffer;
