@@ -500,6 +500,10 @@ public node intake_parameters {
     input spool_full_rpm: 3000.0 * units.rpm;
     input spool_time: 0.4 * units.sec;
     input compressor_efficiency: 0.72;
+    input turbo_reference_exhaust_flow: 0.0;
+    input turbo_sound_volume: 0.0;
+    input wastegate_sound_volume: 0.0;
+    input turbo_whine_frequency: 5000.0;
 }
 
 private node _intake => __engine_sim__intake {
@@ -518,6 +522,10 @@ private node _intake => __engine_sim__intake {
     input spool_full_rpm [float];
     input spool_time [float];
     input compressor_efficiency [float];
+    input turbo_reference_exhaust_flow [float];
+    input turbo_sound_volume [float];
+    input wastegate_sound_volume [float];
+    input turbo_whine_frequency [float];
     alias output __out [intake_channel];
 }
 
@@ -538,6 +546,10 @@ public node intake {
     input spool_full_rpm: parameters.spool_full_rpm;
     input spool_time: parameters.spool_time;
     input compressor_efficiency: parameters.compressor_efficiency;
+    input turbo_reference_exhaust_flow: parameters.turbo_reference_exhaust_flow;
+    input turbo_sound_volume: parameters.turbo_sound_volume;
+    input wastegate_sound_volume: parameters.wastegate_sound_volume;
+    input turbo_whine_frequency: parameters.turbo_whine_frequency;
     alias output __out [_intake]:
         _intake(
             plenum_volume: plenum_volume,
@@ -554,7 +566,11 @@ public node intake {
             spool_start_rpm: spool_start_rpm,
             spool_full_rpm: spool_full_rpm,
             spool_time: spool_time,
-            compressor_efficiency: compressor_efficiency
+            compressor_efficiency: compressor_efficiency,
+            turbo_reference_exhaust_flow: turbo_reference_exhaust_flow,
+            turbo_sound_volume: turbo_sound_volume,
+            wastegate_sound_volume: wastegate_sound_volume,
+            turbo_whine_frequency: turbo_whine_frequency
         );
 }
 

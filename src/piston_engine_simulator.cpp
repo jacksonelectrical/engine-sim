@@ -327,6 +327,12 @@ void PistonEngineSimulator::simulateStep_() {
         }
     }
 
+    const double exhaustFlowRate =
+        std::abs(getTotalExhaustFlow()) / std::max(timestep, 1E-9);
+    for (int i = 0; i < intakeCount; ++i) {
+        m_engine->getIntake(i)->setExhaustFlowRate(exhaustFlowRate);
+    }
+
     combustionController->resetCombustionEvents();
 }
 
@@ -426,6 +432,13 @@ void PistonEngineSimulator::writeToSynthesizer() {
             head->getSoundAttenuation(piston->getCylinderIndex())
             * (exhaustSystem->getAudioVolume() * delayedExhaustPulse / cylinderCount)
             * (1 / (exhaustLength * exhaustLength));
+    }
+
+    if (exhaustSystemCount > 0) {
+        for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
+            m_exhaustFlowStagingBuffer[0] +=
+                m_engine->getIntake(i)->sampleTurboSound(timestep);
+        }
     }
 
     synthesizer().writeInput(m_exhaustFlowStagingBuffer);

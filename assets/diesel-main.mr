@@ -1,4 +1,4 @@
 import "engine_sim.mr"
-import "engines/diesel/single_cylinder_diesel.mr"
+import "engines/diesel/inline_6_4l_turbo_diesel.mr"
 
 main()

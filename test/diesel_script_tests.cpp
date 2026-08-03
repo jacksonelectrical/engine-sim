@@ -22,12 +22,20 @@ TEST(DieselScriptTests, ReferenceConfigurationCompilesAndBuildsDieselEngine) {
     EXPECT_NE(output.transmission, nullptr);
     EXPECT_NE(output.vehicle, nullptr);
     if (output.engine != nullptr) {
-        EXPECT_EQ(output.engine->getCylinderCount(), 1);
+        EXPECT_EQ(output.engine->getCylinderCount(), 6);
         EXPECT_EQ(
             output.engine->getCombustionEventController()->getType(),
             CombustionEventController::Type::CompressionIgnition);
         EXPECT_TRUE(output.engine->getIntake(0)->m_directInjection);
         EXPECT_TRUE(output.engine->getIntake(0)->isForcedInductionEnabled());
+        EXPECT_TRUE(
+            output.engine->getIntake(0)->isExhaustDrivenTurboEnabled());
+
+        output.engine->calculateDisplacement();
+        EXPECT_NEAR(
+            output.engine->getDisplacement(),
+            units::volume(4.0, units::L),
+            units::volume(0.002, units::L));
 
         Engine *engine = output.engine;
         Crankshaft *crankshaft = engine->getOutputCrankshaft();

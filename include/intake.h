@@ -5,6 +5,8 @@
 
 #include "gas_system.h"
 
+#include <algorithm>
+
 class Intake : public Part {
     public:
         struct Parameters {
@@ -47,6 +49,15 @@ class Intake : public Part {
 
             // Adiabatic compressor efficiency
             double CompressorEfficiency = 0.72;
+
+            // Exhaust molar flow that produces full turbo speed. A value of
+            // zero keeps the legacy RPM-based forced-induction model.
+            double TurboReferenceExhaustFlow = 0.0;
+
+            // Procedural turbocharger audio controls
+            double TurboSoundVolume = 0.0;
+            double WastegateSoundVolume = 0.0;
+            double TurboWhineFrequency = 5000.0;
         };
 
     public:
@@ -58,7 +69,11 @@ class Intake : public Part {
 
         void process(double dt);
         void setEngineSpeed(double speed) { m_engineSpeed = speed; }
+        void setExhaustFlowRate(double flowRate) {
+            m_exhaustFlowRate = std::max(0.0, flowRate);
+        }
         void setBoostCommand(double command);
+        double sampleTurboSound(double dt);
 
         inline double getRunnerFlowRate() const { return m_runnerFlowRate; }
         inline double getThrottlePlatePosition() const { return m_idleThrottlePlatePosition * m_throttle; }
@@ -74,6 +89,14 @@ class Intake : public Part {
         }
         inline bool isForcedInductionEnabled() const {
             return m_maxBoostPressure > 0.0;
+        }
+        inline bool isExhaustDrivenTurboEnabled() const {
+            return isForcedInductionEnabled()
+                && m_turboReferenceExhaustFlow > 0.0;
+        }
+        inline double getTurboShaftSpeed() const { return m_turboShaftSpeed; }
+        inline double getWastegatePosition() const {
+            return m_wastegatePosition;
         }
 
         GasSystem m_system;
@@ -103,6 +126,17 @@ class Intake : public Part {
         double m_boostCommand;
         double m_boostPressure;
         double m_compressorOutletTemperature;
+        double m_turboReferenceExhaustFlow;
+        double m_turboSoundVolume;
+        double m_wastegateSoundVolume;
+        double m_turboWhineFrequency;
+        double m_exhaustFlowRate;
+        double m_turboShaftSpeed;
+        double m_wastegatePosition;
+        double m_turboSoundPhase;
+        double m_boostReleaseEnvelope;
+        double m_previousBoostCommand;
+        unsigned int m_turboNoiseState;
 
         GasSystem m_atmosphere;
 };

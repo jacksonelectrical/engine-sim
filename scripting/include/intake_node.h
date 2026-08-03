@@ -43,6 +43,16 @@ namespace es_script {
             addInput("spool_full_rpm", &m_parameters.SpoolFullSpeed);
             addInput("spool_time", &m_parameters.SpoolTime);
             addInput("compressor_efficiency", &m_parameters.CompressorEfficiency);
+            addInput(
+                "turbo_reference_exhaust_flow",
+                &m_parameters.TurboReferenceExhaustFlow);
+            addInput("turbo_sound_volume", &m_parameters.TurboSoundVolume);
+            addInput(
+                "wastegate_sound_volume",
+                &m_parameters.WastegateSoundVolume);
+            addInput(
+                "turbo_whine_frequency",
+                &m_parameters.TurboWhineFrequency);
 
             ObjectReferenceNode<IntakeNode>::registerInputs();
         }

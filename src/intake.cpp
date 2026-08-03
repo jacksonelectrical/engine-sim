@@ -27,6 +27,17 @@ Intake::Intake() {
     m_boostCommand = 0;
     m_boostPressure = 0;
     m_compressorOutletTemperature = units::celcius(25.0);
+    m_turboReferenceExhaustFlow = 0;
+    m_turboSoundVolume = 0;
+    m_wastegateSoundVolume = 0;
+    m_turboWhineFrequency = 5000;
+    m_exhaustFlowRate = 0;
+    m_turboShaftSpeed = 0;
+    m_wastegatePosition = 0;
+    m_turboSoundPhase = 0;
+    m_boostReleaseEnvelope = 0;
+    m_previousBoostCommand = 0;
+    m_turboNoiseState = 0x6d2b79f5u;
 }
 
 Intake::~Intake() {
@@ -71,6 +82,19 @@ void Intake::initialize(Parameters &params) {
         params.CompressorEfficiency,
         0.01,
         1.0);
+    m_turboReferenceExhaustFlow =
+        std::max(0.0, params.TurboReferenceExhaustFlow);
+    m_turboSoundVolume = std::max(0.0, params.TurboSoundVolume);
+    m_wastegateSoundVolume =
+        std::max(0.0, params.WastegateSoundVolume);
+    m_turboWhineFrequency =
+        std::max(100.0, params.TurboWhineFrequency);
+    m_exhaustFlowRate = 0.0;
+    m_turboShaftSpeed = 0.0;
+    m_wastegatePosition = 0.0;
+    m_turboSoundPhase = 0.0;
+    m_boostReleaseEnvelope = 0.0;
+    m_previousBoostCommand = 0.0;
     m_boostPressure = 0.0;
     m_compressorOutletTemperature = units::celcius(25.0);
 }
@@ -80,7 +104,15 @@ void Intake::destroy() {
 }
 
 void Intake::setBoostCommand(double command) {
-    m_boostCommand = std::clamp(command, 0.0, 1.0);
+    const double nextCommand = std::clamp(command, 0.0, 1.0);
+    const double commandDrop = m_previousBoostCommand - nextCommand;
+    if (commandDrop > 0.05 && m_boostPressure > 0.0) {
+        m_boostReleaseEnvelope = std::max(
+            m_boostReleaseEnvelope,
+            commandDrop * m_boostPressure / std::max(m_maxBoostPressure, 1.0));
+    }
+    m_previousBoostCommand = nextCommand;
+    m_boostCommand = nextCommand;
 }
 
 void Intake::process(double dt) {
@@ -104,15 +136,40 @@ void Intake::process(double dt) {
     const double flowAttenuation = std::cos(throttle * constants::pi / 2);
 
     double spoolFraction = 0.0;
-    if (m_spoolFullSpeed <= m_spoolStartSpeed) {
-        spoolFraction = m_engineSpeed >= m_spoolStartSpeed ? 1.0 : 0.0;
-    }
-    else {
-        spoolFraction = std::clamp(
-            (m_engineSpeed - m_spoolStartSpeed)
-                / (m_spoolFullSpeed - m_spoolStartSpeed),
+    if (isExhaustDrivenTurboEnabled()) {
+        const double turbineDrive = std::clamp(
+            m_exhaustFlowRate / m_turboReferenceExhaustFlow,
+            0.0,
+            1.35);
+        const double targetShaftSpeed = std::sqrt(turbineDrive);
+        if (m_spoolTime <= 0.0) {
+            m_turboShaftSpeed = targetShaftSpeed;
+        }
+        else {
+            const double response = 1.0 - std::exp(-dt / m_spoolTime);
+            m_turboShaftSpeed +=
+                (targetShaftSpeed - m_turboShaftSpeed) * response;
+        }
+        m_turboShaftSpeed = std::clamp(m_turboShaftSpeed, 0.0, 1.15);
+        spoolFraction = m_turboShaftSpeed * m_turboShaftSpeed;
+        m_wastegatePosition = std::clamp(
+            (spoolFraction - 0.90) / 0.25,
             0.0,
             1.0);
+    }
+    else {
+        if (m_spoolFullSpeed <= m_spoolStartSpeed) {
+            spoolFraction = m_engineSpeed >= m_spoolStartSpeed ? 1.0 : 0.0;
+        }
+        else {
+            spoolFraction = std::clamp(
+                (m_engineSpeed - m_spoolStartSpeed)
+                    / (m_spoolFullSpeed - m_spoolStartSpeed),
+                0.0,
+                1.0);
+        }
+        m_turboShaftSpeed = spoolFraction;
+        m_wastegatePosition = 0.0;
     }
 
     const double targetBoost =
@@ -176,4 +233,33 @@ void Intake::process(double dt) {
     if (idleCircuitFlow > 0 && !m_directInjection) {
         m_totalFuelInjected += fuelMix.p_fuel * idleCircuitFlow;
     }
+}
+
+double Intake::sampleTurboSound(double dt) {
+    if (!isForcedInductionEnabled() || dt <= 0.0) return 0.0;
+
+    const double shaftSpeed = std::clamp(m_turboShaftSpeed, 0.0, 1.15);
+    const double frequency = 250.0 + m_turboWhineFrequency * shaftSpeed;
+    m_turboSoundPhase = std::fmod(
+        m_turboSoundPhase + 2.0 * constants::pi * frequency * dt,
+        2.0 * constants::pi);
+
+    m_turboNoiseState ^= m_turboNoiseState << 13;
+    m_turboNoiseState ^= m_turboNoiseState >> 17;
+    m_turboNoiseState ^= m_turboNoiseState << 5;
+    const double noise =
+        2.0 * (static_cast<double>(m_turboNoiseState) / 4294967295.0) - 1.0;
+
+    const double whine =
+        (std::sin(m_turboSoundPhase)
+            + 0.22 * std::sin(2.0 * m_turboSoundPhase))
+        * m_turboSoundVolume * shaftSpeed * shaftSpeed;
+    const double release = std::clamp(m_boostReleaseEnvelope, 0.0, 1.0);
+    const double airNoise = noise * m_wastegateSoundVolume
+        * std::clamp(m_wastegatePosition + release, 0.0, 1.0);
+
+    m_boostReleaseEnvelope *= std::exp(-dt / 0.18);
+
+    // Match the order of magnitude of the existing exhaust synthesizer input.
+    return 9000.0 * whine + 14000.0 * airNoise;
 }
