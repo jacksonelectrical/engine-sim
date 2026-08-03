@@ -74,6 +74,14 @@ jobs:
             throw "Microsoft Visual C++ x64 runtime directory was not found"
           }
           Copy-Item "$($crtDirectory.FullName)/*.dll" package/bin/
+          $d3dxLibraries = 'd3dx10_43.dll', 'd3dx11_43.dll'
+          foreach ($library in $d3dxLibraries) {
+            $source = Join-Path "$env:WINDIR/System32" $library
+            if (-not (Test-Path $source)) {
+              throw "DirectX runtime library was not found: $library"
+            }
+            Copy-Item $source package/bin/
+          }
 
       - name: Upload application
         uses: actions/upload-artifact@v4
