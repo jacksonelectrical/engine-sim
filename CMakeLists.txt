@@ -313,6 +313,7 @@ enable_testing()
 
 add_executable(engine-sim-test
     # Source files
+    test/backward_compatibility_tests.cpp
     test/diesel_combustion_model_tests.cpp
     test/diesel_injection_module_tests.cpp
     test/gas_system_tests.cpp

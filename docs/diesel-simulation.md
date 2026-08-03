@@ -58,6 +58,7 @@ See `assets/engines/diesel/single_cylinder_diesel.mr` for a complete example.
 
 The automated tests cover:
 
+- preservation of the default spark controller and gasoline chemistry;
 - mole, composition, and temperature conservation during direct injection;
 - fuel-specific diesel stoichiometry;
 - per-cylinder injection event timing and driver-demand fuel quantity;
