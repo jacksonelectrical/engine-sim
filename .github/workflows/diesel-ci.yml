@@ -71,8 +71,8 @@ jobs:
           $visualStudio = & $vswhere -latest -products * -property installationPath
           $crtDirectory = Get-ChildItem "$visualStudio/VC/Redist/MSVC" -Recurse -Directory |
             Where-Object {
-              $_.FullName -match '[\\/]x64[\\/]Microsoft\.VC\d+\.CRT$' `
-                -and $_.FullName -notmatch '[\\/]onecore[\\/]'
+              $_.FullName -match `
+                '[\\/]MSVC[\\/][0-9.]+[\\/]x64[\\/]Microsoft\.VC\d+\.CRT$'
             } |
             Sort-Object { [version]$_.Parent.Parent.Name } -Descending |
             Select-Object -First 1
