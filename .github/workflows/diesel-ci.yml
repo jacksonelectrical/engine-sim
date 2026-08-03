@@ -12,9 +12,13 @@ jobs:
 
     steps:
       - name: Check out source and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
+
+      - name: Install Flex and Bison
+        shell: pwsh
+        run: choco install winflexbison3 --yes --no-progress
 
       - name: Install native dependencies
         shell: pwsh
@@ -23,7 +27,6 @@ jobs:
           sdl2:x64-windows
           sdl2-image:x64-windows
           boost-filesystem:x64-windows
-          winflexbison:x64-windows
 
       - name: Configure
         shell: pwsh
