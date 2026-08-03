@@ -61,6 +61,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force package/bin, package/assets, package/delta | Out-Null
           Copy-Item build/Release/engine-sim-app.exe package/bin/
+          Copy-Item build/Release/engine-sim-app.map package/bin/
+          Copy-Item build/Release/engine-sim-app.pdb package/bin/
           Copy-Item build/Release/*.dll package/bin/ -ErrorAction SilentlyContinue
           Copy-Item configuration/delta.conf package/bin/
           Copy-Item assets/* package/assets/ -Recurse

@@ -280,6 +280,11 @@ add_executable(engine-sim-app WIN32
     include/info_cluster.h
 )
 
+if (MSVC)
+    target_link_options(engine-sim-app PRIVATE
+        "/MAP:$<TARGET_FILE_DIR:engine-sim-app>/engine-sim-app.map")
+endif ()
+
 target_link_libraries(engine-sim-app
     engine-sim
 )
