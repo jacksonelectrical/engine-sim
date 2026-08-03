@@ -35,6 +35,7 @@ Engine::Engine() {
 
     m_throttle = nullptr;
     m_throttleValue = 0.0;
+    m_combustionEventController = &m_ignitionModule;
 
     m_initialSimulationFrequency = 10000.0;
     m_initialHighFrequencyGain = 0.01;
@@ -110,6 +111,7 @@ void Engine::destroy() {
     }
 
     m_ignitionModule.destroy();
+    m_dieselInjectionModule.destroy();
 
     if (m_throttle != nullptr) delete m_throttle;
     if (m_crankshafts != nullptr) delete[] m_crankshafts;
@@ -130,6 +132,7 @@ void Engine::destroy() {
     m_intakes = nullptr;
     m_combustionChambers = nullptr;
     m_throttle = nullptr;
+    m_combustionEventController = &m_ignitionModule;
 }
 
 Crankshaft *Engine::getOutputCrankshaft() const {
@@ -145,8 +148,12 @@ double Engine::getSpeedControl() {
 }
 
 void Engine::setThrottle(double throttle) {
+    const bool isDiesel =
+        m_combustionEventController != nullptr
+        && m_combustionEventController->getType()
+            == CombustionEventController::Type::CompressionIgnition;
     for (int i = 0; i < m_intakeCount; ++i) {
-        m_intakes[i].m_throttle = throttle;
+        m_intakes[i].m_throttle = isDiesel ? 0.0 : throttle;
     }
 
     m_throttleValue = throttle;
@@ -359,9 +366,32 @@ void Engine::resetFuelConsumption() {
     for (int i = 0; i < m_intakeCount; ++i) {
         m_intakes[i].m_totalFuelInjected = 0;
     }
+    for (int i = 0; i < m_cylinderCount; ++i) {
+        m_combustionChambers[i].resetTotalInjectedFuelMass();
+    }
+}
+
+void Engine::useDieselInjectionModule() {
+    m_combustionEventController = &m_dieselInjectionModule;
+    for (int i = 0; i < m_intakeCount; ++i) {
+        m_intakes[i].m_directInjection = true;
+    }
 }
 
 double Engine::getTotalFuelMassConsumed() const {
+    if (
+        m_combustionEventController != nullptr
+        && m_combustionEventController->getType()
+            == CombustionEventController::Type::CompressionIgnition)
+    {
+        double fuelMassConsumed = 0.0;
+        for (int i = 0; i < m_cylinderCount; ++i) {
+            fuelMassConsumed +=
+                m_combustionChambers[i].getTotalInjectedFuelMass();
+        }
+        return fuelMassConsumed;
+    }
+
     double n_fuelConsumed = 0;
     for (int i = 0; i < m_intakeCount; ++i) {
         n_fuelConsumed += m_intakes[i].m_totalFuelInjected;

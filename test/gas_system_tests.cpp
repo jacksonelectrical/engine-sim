@@ -11,6 +11,65 @@ TEST(GasSystemTests, GasSystemSanity) {
     system.initialize(0.0, 0.0, 0.0);
 }
 
+TEST(GasSystemTests, DirectFuelInjectionConservesCompositionAndTemperature) {
+    GasSystem::Mix air;
+    air.p_fuel = 0.0;
+    air.p_inert = 0.75;
+    air.p_o2 = 0.25;
+
+    GasSystem system;
+    system.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(1.0, units::L),
+        units::kelvin(700.0),
+        air);
+
+    const double initialMoles = system.n();
+    const double initialTemperature = system.temperature();
+    const double injectedFuelMoles = initialMoles * 0.05;
+    system.injectFuel(injectedFuelMoles);
+
+    EXPECT_NEAR(system.n(), initialMoles + injectedFuelMoles, 1E-12);
+    EXPECT_NEAR(system.n_fuel(), injectedFuelMoles, 1E-12);
+    EXPECT_NEAR(
+        system.mix().p_fuel + system.mix().p_inert + system.mix().p_o2,
+        1.0,
+        1E-12);
+    EXPECT_NEAR(system.temperature(), initialTemperature, 1E-9);
+}
+
+TEST(GasSystemTests, DieselReactionUsesFuelSpecificStoichiometry) {
+    GasSystem::Mix air;
+    air.p_fuel = 0.0;
+    air.p_inert = 0.75;
+    air.p_o2 = 0.25;
+
+    GasSystem system;
+    system.initialize(
+        units::pressure(40.0, units::atm),
+        units::volume(500.0, units::cc),
+        units::kelvin(850.0),
+        air);
+
+    constexpr double oxygenMolesPerFuelMole = 18.5;
+    constexpr double productMolesPerReactantMole = 25.0 / 19.5;
+    const double fuelMoles = system.n_o2() / oxygenMolesPerFuelMole;
+    system.injectFuel(fuelMoles);
+
+    const double reactedFuel = system.reactFuel(
+        fuelMoles,
+        oxygenMolesPerFuelMole,
+        productMolesPerReactantMole);
+
+    EXPECT_NEAR(reactedFuel, fuelMoles, 1E-12);
+    EXPECT_NEAR(system.n_fuel(), 0.0, 1E-12);
+    EXPECT_NEAR(system.n_o2(), 0.0, 1E-12);
+    EXPECT_NEAR(
+        system.mix().p_fuel + system.mix().p_inert + system.mix().p_o2,
+        1.0,
+        1E-12);
+}
+
 TEST(GasSystemTests, AdiabaticEnergyConservation) {
     constexpr double pistonArea = units::area(1.0, units::cm2);
     constexpr double vesselHeight = units::distance(1.0, units::cm);

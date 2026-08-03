@@ -9,6 +9,8 @@
 #include "cylinder_bank.h"
 #include "cylinder_head.h"
 #include "exhaust_system.h"
+#include "combustion_event_controller.h"
+#include "diesel_injection_module.h"
 #include "ignition_module.h"
 #include "intake.h"
 #include "combustion_chamber.h"
@@ -97,6 +99,9 @@ class Engine : public Part {
         Piston *getPiston(int i) const { return &m_pistons[i]; }
         ConnectingRod *getConnectingRod(int i) const { return &m_connectingRods[i]; }
         IgnitionModule *getIgnitionModule() { return &m_ignitionModule; }
+        DieselInjectionModule *getDieselInjectionModule() { return &m_dieselInjectionModule; }
+        CombustionEventController *getCombustionEventController() { return m_combustionEventController; }
+        void useDieselInjectionModule();
         ExhaustSystem *getExhaustSystem(int i) const { return &m_exhaustSystems[i]; }
         Intake *getIntake(int i) const { return &m_intakes[i]; }
         CombustionChamber *getChamber(int i) const { return &m_combustionChambers[i]; }
@@ -143,6 +148,8 @@ class Engine : public Part {
         int m_intakeCount;
 
         IgnitionModule m_ignitionModule;
+        DieselInjectionModule m_dieselInjectionModule;
+        CombustionEventController *m_combustionEventController;
         Fuel m_fuel;
 
         Throttle *m_throttle;

@@ -6,6 +6,7 @@
 #include "piston.h"
 #include "gas_system.h"
 #include "cylinder_head.h"
+#include "combustion_event_controller.h"
 #include "units.h"
 #include "fuel.h"
 
@@ -36,6 +37,19 @@ class CombustionChamber : public atg_scs::ForceGenerator {
             GasSystem::Mix globalMix;
         };
 
+        struct DieselCombustionEvent {
+            bool active = false;
+            bool ignited = false;
+            CombustionEventController::Event command;
+            double totalFuelMoles = 0.0;
+            double injectedFuelMoles = 0.0;
+            double scheduledBurnFuelMoles = 0.0;
+            double burnedFuelMoles = 0.0;
+            double injectionAngle = 0.0;
+            double ignitionDelayRemaining = 0.0;
+            double burnAngle = 0.0;
+        };
+
         struct FrictionModelParams {
             double frictionCoeff = 0.06;
             double breakawayFriction = units::force(50, units::N);
@@ -61,14 +75,17 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double calculateMeanPistonSpeed() const;
         double calculateFiringPressure() const;
 
-        bool isLit() const { return m_lit; }
+        bool isLit() const { return m_lit || m_dieselEvent.ignited; }
         bool popLitLastFrame();
 
         void ignite();
+        void beginDieselInjection(const CombustionEventController::Event &event);
         void update(double dt);
         void flow(double dt);
 
         double lastEventAfr() const;
+        double getTotalInjectedFuelMass() const { return m_totalInjectedFuelMass; }
+        void resetTotalInjectedFuelMass() { m_totalInjectedFuelMass = 0.0; }
 
         double getLastIterationExhaustFlow() const { return m_exhaustFlow; }
 
@@ -78,11 +95,22 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         void resetLastTimestepIntakeFlow() { m_lastTimestepTotalIntakeFlow = 0; }
         double getLastTimestepIntakeFlow() const { return m_lastTimestepTotalIntakeFlow; }
 
+        void resetLastTimestepDieselPressureRise() {
+            m_lastTimestepDieselPressureRise = 0.0;
+        }
+        double getLastTimestepDieselPressureRise() const {
+            return m_lastTimestepDieselPressureRise;
+        }
+        double getDieselCombustionNoise() const {
+            return m_dieselEvent.command.combustionNoise;
+        }
+
         Function *m_meanPistonSpeedToTurbulence;
         GasSystem m_system;
         GasSystem m_intakeRunnerAndManifold;
         GasSystem m_exhaustRunnerAndPrimary;
         FlameEvent m_flameEvent;
+        DieselCombustionEvent m_dieselEvent;
         bool m_lit;
 
         FrictionModelParams m_frictionModel;
@@ -93,6 +121,9 @@ class CombustionChamber : public atg_scs::ForceGenerator {
     protected:
         double calculateFrictionForce(double v) const;
         void updateCycleStates();
+        void updateDieselCombustion(double dt);
+        double calculateDieselIgnitionDelay(
+            const CombustionEventController::Event &event) const;
 
         double m_intakeFlowRate;
         double m_exhaustFlowRate;
@@ -105,8 +136,10 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double m_lastTimestepTotalExhaustFlow;
         double m_lastTimestepTotalIntakeFlow;
         double m_exhaustFlow;
+        double m_lastTimestepDieselPressureRise;
 
         double m_crankcasePressure;
+        double m_totalInjectedFuelMass;
 
         double *m_pressure;
         double *m_pistonSpeed;

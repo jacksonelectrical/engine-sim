@@ -1,13 +1,13 @@
 #ifndef ATG_ENGINE_SIM_IGNITION_MODULE_H
 #define ATG_ENGINE_SIM_IGNITION_MODULE_H
 
-#include "part.h"
+#include "combustion_event_controller.h"
 
 #include "crankshaft.h"
 #include "function.h"
 #include "units.h"
 
-class IgnitionModule : public Part {
+class IgnitionModule : public CombustionEventController {
     public:
         struct Parameters {
             int cylinderCount;
@@ -27,19 +27,28 @@ class IgnitionModule : public Part {
         IgnitionModule();
         virtual ~IgnitionModule();
 
-        virtual void destroy();
+        virtual void destroy() override;
 
         void initialize(const Parameters &params);
         void setFiringOrder(int cylinderIndex, double angle);
-        void reset();
-        void update(double dt);
+        virtual void reset() override;
+        virtual void update(double dt) override;
 
         bool getIgnitionEvent(int index) const;
         void resetIgnitionEvents();
 
-        double getTimingAdvance();
+        virtual Event getCombustionEvent(int cylinderIndex) const override {
+            Event event;
+            event.kind = Event::Kind::Spark;
+            event.active = getIgnitionEvent(cylinderIndex);
+            return event;
+        }
+        virtual void resetCombustionEvents() override {
+            resetIgnitionEvents();
+        }
 
-        bool m_enabled;
+        virtual double getTimingAdvance() override;
+        virtual Type getType() const override { return Type::SparkIgnition; }
 
     protected:
         SparkPlug *getPlug(int i);

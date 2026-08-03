@@ -37,6 +37,8 @@ namespace es_script {
             addInput("energy_density", &m_parameters.energyDensity);
             addInput("density", &m_parameters.density);
             addInput("molecular_afr", &m_parameters.molecularAfr);
+            addInput("molecular_oxygen_ratio", &m_parameters.molecularOxygenRatio);
+            addInput("product_mole_ratio", &m_parameters.productMoleRatio);
             addInput("max_burning_efficiency", &m_parameters.maxBurningEfficiency);
             addInput("burning_efficiency_randomness", &m_parameters.burningEfficiencyRandomness);
             addInput("low_efficiency_attenuation", &m_parameters.lowEfficiencyAttenuation);

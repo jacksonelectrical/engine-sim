@@ -25,6 +25,7 @@ public node camshaft_channel => __engine_sim__camshaft_channel { /* void */ }
 public node intake_channel => __engine_sim__intake_channel { /* void */ }
 public node exhaust_system_channel => __engine_sim__exhaust_system_channel { /* void */ }
 public node ignition_module_channel => __engine_sim__ignition_module_channel { /* void */ }
+public node diesel_injection_module_channel => __engine_sim__diesel_injection_module_channel { /* void */ }
 public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
 public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
 public node impulse_response_channel => __engine_sim__impulse_response_channel { /* void */ }
@@ -54,6 +55,8 @@ public node fuel => __engine_sim__fuel {
     input energy_density [float]: 48.1 * units.kJ / units.g;
     input density [float]: 0.755 * units.kg / units.L;
     input molecular_afr [float]: 25 / 2.0;
+    input molecular_oxygen_ratio [float]: 25 / 2.0;
+    input product_mole_ratio [float]: (16.0 + 18.0) / (25.0 + 2.0);
     input turbulence_to_flame_speed_ratio [function]:
         turbulence_to_flame_speed_ratio_default();
     input max_burning_efficiency [float]: 0.8;
@@ -594,6 +597,23 @@ public node ignition_module => __engine_sim__ignition_module {
     input rev_limit [float]: 7000.0 * units.rpm;
     input limiter_duration [float]: 0.5 * units.sec;
     alias output __out [ignition_module_channel];
+}
+
+public node diesel_injection_module => __engine_sim__diesel_injection_module {
+    input injection_timing_curve [function];
+    input rev_limit [float]: 4500.0 * units.rpm;
+    input limiter_duration [float]: 0.1 * units.sec;
+    input idle_fuel_mass [float]: 2.0 * units.mg;
+    input max_fuel_mass [float]: 60.0 * units.mg;
+    input injection_duration [float]: 18.0 * units.deg;
+    input ignition_delay [float]: 0.001 * units.sec;
+    input cetane_number [float]: 50.0;
+    input minimum_ignition_temperature [float]: 650.0 * units.K;
+    input premixed_burn_fraction [float]: 0.25;
+    input premixed_burn_duration [float]: 8.0 * units.deg;
+    input diffusion_burn_duration [float]: 45.0 * units.deg;
+    input combustion_noise [float]: 0.15;
+    alias output __out [diesel_injection_module_channel];
 }
 
 public node ignition_wire => __engine_sim__ignition_wire {

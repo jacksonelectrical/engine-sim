@@ -14,6 +14,7 @@ DEFINE_CHANNEL(ExhaustSystemChannel);
 DEFINE_CHANNEL(CylinderHeadChannel);
 DEFINE_CHANNEL(CamshaftChannel);
 DEFINE_CHANNEL(IgnitionModuleChannel);
+DEFINE_CHANNEL(DieselInjectionModuleChannel);
 DEFINE_CHANNEL(IgnitionWireChannel);
 DEFINE_CHANNEL(FuelChannel);
 DEFINE_CHANNEL(ImpulseResponseChannel);

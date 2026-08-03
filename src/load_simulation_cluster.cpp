@@ -301,7 +301,7 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
 bool LoadSimulationCluster::isIgnitionOn() const {
     Engine *engine = m_simulator->getEngine();
     return (engine != nullptr)
-        ? engine->getIgnitionModule()->m_enabled
+        ? engine->getCombustionEventController()->m_enabled
         : false;
 }
 

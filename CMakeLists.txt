@@ -56,6 +56,7 @@ add_library(engine-sim STATIC
     src/cylinder_head.cpp
     src/delay_filter.cpp
     src/derivative_filter.cpp
+    src/diesel_injection_module.cpp
     src/direct_throttle_linkage.cpp
     src/dynamometer.cpp
     src/engine.cpp
@@ -92,6 +93,7 @@ add_library(engine-sim STATIC
     include/audio_buffer.h
     include/application_settings.h
     include/camshaft.h
+    include/combustion_event_controller.h
     include/crankshaft.h
     include/combustion_chamber.h
     include/connecting_rod.h
@@ -100,6 +102,7 @@ add_library(engine-sim STATIC
     include/cylinder_head.h
     include/delay_filter.h
     include/derivative_filter.h
+    include/diesel_injection_module.h
     include/direct_throttle_linkage.h
     include/dynamometer.h
     include/engine.h
@@ -159,6 +162,7 @@ if (PIRANHA_ENABLED)
         scripting/include/crankshaft_node.h
         scripting/include/cylinder_bank_node.h
         scripting/include/cylinder_head_node.h
+        scripting/include/diesel_injection_module_node.h
         scripting/include/engine_context.h
         scripting/include/engine_node.h
         scripting/include/engine_sim.h
@@ -307,6 +311,7 @@ enable_testing()
 
 add_executable(engine-sim-test
     # Source files
+    test/diesel_injection_module_tests.cpp
     test/gas_system_tests.cpp
     test/function_test.cpp
     test/synthesizer_tests.cpp

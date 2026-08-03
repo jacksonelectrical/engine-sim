@@ -226,7 +226,7 @@ void PistonEngineSimulator::placeAndInitialize() {
         m_delayFilters[i].initialize(delay, 10000.0);
     }
 
-    m_engine->getIgnitionModule()->reset();
+    m_engine->getCombustionEventController()->reset();
 
     m_exhaustFlowStagingBuffer = new double[m_engine->getExhaustSystemCount()];
 }
@@ -282,13 +282,22 @@ void PistonEngineSimulator::placeCylinder(int i) {
 
 void PistonEngineSimulator::simulateStep_() {
     const double timestep = getTimestep();
-    IgnitionModule *im = m_engine->getIgnitionModule();
-    im->update(timestep);
+    CombustionEventController *combustionController =
+        m_engine->getCombustionEventController();
+    combustionController->update(timestep);
 
     const int cylinderCount = m_engine->getCylinderCount();
     for (int i = 0; i < cylinderCount; ++i) {
-        if (im->getIgnitionEvent(i)) {
+        const CombustionEventController::Event event =
+            combustionController->getCombustionEvent(i);
+        if (event.active && event.kind == CombustionEventController::Event::Kind::Spark) {
             m_engine->getChamber(i)->ignite();
+        }
+        else if (
+            event.active
+            && event.kind == CombustionEventController::Event::Kind::DieselInjection)
+        {
+            m_engine->getChamber(i)->beginDieselInjection(event);
         }
 
         m_engine->getChamber(i)->update(timestep);
@@ -297,6 +306,7 @@ void PistonEngineSimulator::simulateStep_() {
     for (int i = 0; i < cylinderCount; ++i) {
         m_engine->getChamber(i)->resetLastTimestepExhaustFlow();
         m_engine->getChamber(i)->resetLastTimestepIntakeFlow();
+        m_engine->getChamber(i)->resetLastTimestepDieselPressureRise();
     }
 
     const int exhaustSystemCount = m_engine->getExhaustSystemCount();
@@ -317,7 +327,7 @@ void PistonEngineSimulator::simulateStep_() {
         }
     }
 
-    im->resetIgnitionEvents();
+    combustionController->resetCombustionEvents();
 }
 
 double PistonEngineSimulator::getTotalExhaustFlow() const {
@@ -396,6 +406,15 @@ void PistonEngineSimulator::writeToSynthesizer() {
                 1.0 * (chamber->m_exhaustRunnerAndPrimary.pressure() - units::pressure(1.0, units::atm))
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(1.0, 0.0)
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(-1.0, 0.0));
+
+        if (
+            m_engine->getCombustionEventController()->getType()
+                == CombustionEventController::Type::CompressionIgnition)
+        {
+            exhaustFlow += attenuation_3 * 1600
+                * chamber->getDieselCombustionNoise()
+                * chamber->getLastTimestepDieselPressureRise();
+        }
 
         lastValveLift[i] = head->exhaustValveLift(piston->getCylinderIndex());
 

@@ -9,6 +9,7 @@ Intake::Intake() {
     m_idleFlowK = 0;
     m_flow = 0;
     m_throttle = 1.0;
+    m_directInjection = false;
     m_idleThrottlePlatePosition = 0.0;
     m_crossSectionArea = 0.0;
     m_flowRate = 0;
@@ -63,16 +64,16 @@ void Intake::process(double dt) {
 
     const double p_air = ideal_afr / (1 + ideal_afr);
     GasSystem::Mix fuelAirMix;
-    fuelAirMix.p_fuel = 1 - p_air;
-    fuelAirMix.p_inert = p_air * 0.75;
-    fuelAirMix.p_o2 = p_air * 0.25;
+    fuelAirMix.p_fuel = m_directInjection ? 0.0 : 1 - p_air;
+    fuelAirMix.p_inert = m_directInjection ? 0.75 : p_air * 0.75;
+    fuelAirMix.p_o2 = m_directInjection ? 0.25 : p_air * 0.25;
 
     const double idle_afr = 2.0;
     const double p_idle_air = idle_afr / (1 + idle_afr);
     GasSystem::Mix fuelMix;
-    fuelMix.p_fuel = (1.0 - p_idle_air);
-    fuelMix.p_inert = p_idle_air * 0.75;
-    fuelMix.p_o2 = p_idle_air * 0.25;
+    fuelMix.p_fuel = m_directInjection ? 0.0 : (1.0 - p_idle_air);
+    fuelMix.p_inert = m_directInjection ? 0.75 : p_idle_air * 0.75;
+    fuelMix.p_o2 = m_directInjection ? 0.25 : p_idle_air * 0.25;
 
     const double throttle = getThrottlePlatePosition();
     const double flowAttenuation = std::cos(throttle * constants::pi / 2);
@@ -99,11 +100,11 @@ void Intake::process(double dt) {
     m_system.dissipateExcessVelocity();
     m_system.updateVelocity(dt, m_velocityDecay);
 
-    if (m_flow > 0) {
+    if (m_flow > 0 && !m_directInjection) {
         m_totalFuelInjected += fuelAirMix.p_fuel * m_flow;
     }
 
-    if (idleCircuitFlow > 0) {
+    if (idleCircuitFlow > 0 && !m_directInjection) {
         m_totalFuelInjected += fuelMix.p_fuel * idleCircuitFlow;
     }
 }

@@ -53,6 +53,7 @@ class Intake : public Part {
 
         GasSystem m_system;
         double m_throttle;
+        bool m_directInjection;
 
         double m_flow;
         double m_flowRate;

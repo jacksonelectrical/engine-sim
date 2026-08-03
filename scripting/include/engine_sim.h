@@ -11,6 +11,7 @@
 #include "../../include/transmission.h"
 #include "../../include/simulator.h"
 #include "../../include/fuel.h"
+#include "../../include/diesel_injection_module.h"
 #include "../../include/impulse_response.h"
 #include "../../include/standard_valvetrain.h"
 #include "../../include/vtec_valvetrain.h"

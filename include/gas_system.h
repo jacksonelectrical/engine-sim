@@ -51,7 +51,15 @@ class GasSystem {
         void changeMix(const Mix &mix);
         void injectFuel(double n);
 
-        double react(double n, const Mix &mix);
+        double react(
+            double n,
+            const Mix &mix,
+            double oxygenMolesPerFuelMole = 25.0 / 2.0,
+            double productMolesPerReactantMole = (16.0 + 18.0) / (25.0 + 2.0));
+        double reactFuel(
+            double fuelMoles,
+            double oxygenMolesPerFuelMole,
+            double productMolesPerReactantMole);
         static double flowConstant(double flowRate, double P, double pressureDrop, double T, double hcr);
         static double k_28inH2O(double flowRateScfm);
         static double k_carb(double flowRateScfm);

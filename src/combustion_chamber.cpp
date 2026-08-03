@@ -33,10 +33,12 @@ CombustionChamber::CombustionChamber() {
     m_lastTimestepTotalExhaustFlow = 0;
     m_lastTimestepTotalIntakeFlow = 0;
     m_exhaustFlow = 0;
+    m_lastTimestepDieselPressureRise = 0;
     m_exhaustFlowRate = 0;
     m_intakeFlowRate = 0;
 
     m_fuel = nullptr;
+    m_totalInjectedFuelMass = 0.0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -223,6 +225,27 @@ void CombustionChamber::ignite() {
     }
 }
 
+void CombustionChamber::beginDieselInjection(
+    const CombustionEventController::Event &event)
+{
+    if (
+        event.kind != CombustionEventController::Event::Kind::DieselInjection
+        || event.fuelMass <= 0.0
+        || m_fuel->getMolecularMass() <= 0.0)
+    {
+        return;
+    }
+
+    m_lit = false;
+    m_dieselEvent = DieselCombustionEvent();
+    m_dieselEvent.active = true;
+    m_dieselEvent.command = event;
+    m_dieselEvent.totalFuelMoles =
+        event.fuelMass / m_fuel->getMolecularMass();
+    m_dieselEvent.ignitionDelayRemaining =
+        calculateDieselIgnitionDelay(event);
+}
+
 void CombustionChamber::update(double dt) {
     m_system.setVolume(getVolume());
 
@@ -335,8 +358,11 @@ void CombustionChamber::flow(double dt) {
             const double litVolume = burnedVolume - prevBurnedVolume;
             const double n = (litVolume / volume) * m_system.n();
 
-            const double fuelBurned =
-                m_system.react(n * m_flameEvent.efficiency, m_flameEvent.globalMix);
+            const double fuelBurned = m_system.react(
+                n * m_flameEvent.efficiency,
+                m_flameEvent.globalMix,
+                m_fuel->getMolecularOxygenRatio(),
+                m_fuel->getProductMoleRatio());
             const double massFuelBurned = fuelBurned * m_fuel->getMolecularMass();
             m_system.changeEnergy(
                 massFuelBurned * m_fuel->getEnergyDensity());
@@ -351,6 +377,134 @@ void CombustionChamber::flow(double dt) {
         }
 
         m_flameEvent.lastVolume = volume;
+    }
+
+    if (m_dieselEvent.active) {
+        updateDieselCombustion(dt);
+    }
+}
+
+double CombustionChamber::calculateDieselIgnitionDelay(
+    const CombustionEventController::Event &event) const
+{
+    const double T = std::fmax(m_system.temperature(), units::kelvin(300.0));
+    const double P = std::fmax(
+        m_system.pressure(),
+        units::pressure(1.0, units::atm));
+    const double cetane = std::fmax(event.cetaneNumber, 1.0);
+
+    const double temperatureFactor =
+        std::exp(2200.0 * (1.0 / T - 1.0 / units::kelvin(850.0)));
+    const double pressureFactor = std::pow(
+        units::pressure(40.0, units::atm) / P,
+        0.7);
+    const double cetaneFactor = 50.0 / cetane;
+
+    return clamp(
+        event.ignitionDelay * temperatureFactor * pressureFactor * cetaneFactor,
+        0.0001 * units::sec,
+        0.0500 * units::sec);
+}
+
+void CombustionChamber::updateDieselCombustion(double dt) {
+    DieselCombustionEvent &event = m_dieselEvent;
+    const double crankSpeed = std::fabs(
+        m_engine->getOutputCrankshaft()->m_body.v_theta);
+    const double dTheta = crankSpeed * dt;
+
+    const double injectionDuration = event.command.injectionDuration;
+    if (event.injectedFuelMoles < event.totalFuelMoles) {
+        const double lastInjectionAngle = event.injectionAngle;
+        event.injectionAngle += dTheta;
+
+        const double lastFraction = injectionDuration > 0.0
+            ? clamp(lastInjectionAngle / injectionDuration)
+            : 0.0;
+        const double nextFraction = injectionDuration > 0.0
+            ? clamp(event.injectionAngle / injectionDuration)
+            : 1.0;
+        const double fuelToInject = std::fmin(
+            event.totalFuelMoles - event.injectedFuelMoles,
+            event.totalFuelMoles * (nextFraction - lastFraction));
+
+        if (fuelToInject > 0.0) {
+            m_system.injectFuel(fuelToInject);
+            event.injectedFuelMoles += fuelToInject;
+            m_totalInjectedFuelMass +=
+                fuelToInject * m_fuel->getMolecularMass();
+        }
+    }
+
+    if (!event.ignited) {
+        if (m_system.temperature() >= event.command.minimumIgnitionTemperature) {
+            event.ignitionDelayRemaining -= dt;
+        }
+
+        if (event.ignitionDelayRemaining <= 0.0) {
+            event.ignited = true;
+            m_litLastFrame = true;
+        }
+    }
+
+    if (event.ignited) {
+        const double lastBurnAngle = event.burnAngle;
+        event.burnAngle += dTheta;
+
+        const auto wiebe = [](double x) {
+            const double clampedX = clamp(x);
+            return 1.0 - std::exp(-6.9 * std::pow(clampedX, 3.0));
+        };
+
+        const double premixedDuration = event.command.premixedBurnDuration;
+        const double diffusionDuration = event.command.diffusionBurnDuration;
+        const double premixedFraction = clamp(event.command.premixedBurnFraction);
+
+        const double lastPremixed = premixedDuration > 0.0
+            ? wiebe(lastBurnAngle / premixedDuration)
+            : 1.0;
+        const double nextPremixed = premixedDuration > 0.0
+            ? wiebe(event.burnAngle / premixedDuration)
+            : 1.0;
+        const double lastDiffusion = diffusionDuration > 0.0
+            ? wiebe(lastBurnAngle / diffusionDuration)
+            : 1.0;
+        const double nextDiffusion = diffusionDuration > 0.0
+            ? wiebe(event.burnAngle / diffusionDuration)
+            : 1.0;
+
+        const double scheduledFraction =
+            premixedFraction * (nextPremixed - lastPremixed)
+            + (1.0 - premixedFraction) * (nextDiffusion - lastDiffusion);
+        event.scheduledBurnFuelMoles +=
+            event.totalFuelMoles * scheduledFraction;
+
+        const double fuelBurned = m_system.reactFuel(
+            event.scheduledBurnFuelMoles,
+            m_fuel->getMolecularOxygenRatio(),
+            m_fuel->getProductMoleRatio());
+        event.scheduledBurnFuelMoles -= fuelBurned;
+        event.burnedFuelMoles += fuelBurned;
+
+        const double pressureBeforeHeatRelease = m_system.pressure();
+        const double massFuelBurned =
+            fuelBurned * m_fuel->getMolecularMass();
+        m_system.changeEnergy(
+            massFuelBurned * m_fuel->getEnergyDensity());
+        m_lastTimestepDieselPressureRise += std::fmax(
+            0.0,
+            m_system.pressure() - pressureBeforeHeatRelease);
+        m_nBurntFuel += massFuelBurned;
+
+        const double totalBurnDuration = std::fmax(
+            premixedDuration,
+            diffusionDuration);
+        if (
+            event.injectedFuelMoles >= event.totalFuelMoles
+            && event.burnAngle >= totalBurnDuration)
+        {
+            event.active = false;
+            event.ignited = false;
+        }
     }
 }
 

@@ -10,6 +10,15 @@ To get the newest releases of the game, [click here](https://github.com/Engine-S
 
 This is a real-time internal combustion engine simulation **designed specifically to produce engine audio and simulate engine response characteristics.** It is NOT a scientific tool and cannot be expected to provide accurate figures for the purposes of engineering or engine tuning.
 
+## Diesel fork
+
+This fork includes an experimental, backward-compatible compression-ignition
+simulation. It adds cylinder-direct injection, ignition delay, staged diesel
+heat release, fuel-demand control, fuel cut, configurable fuel chemistry, and
+pressure-rise audio. See [the diesel simulation guide](docs/diesel-simulation.md)
+and the reference engine in
+`assets/engines/diesel/single_cylinder_diesel.mr`.
+
 ## How do I install it?
 
 This is a code repository and might not look like other software that you're used to downloading and installing (if you're not familiar with programming). To download a ready-to-use version of the application, navigate to the [releases page](https://github.com/ange-yaghi/engine-sim/releases), find the most recent release (ex. `v0.1.5a`), click "Assets" and download the .zip file with a name that starts with `engine-sim-build`. Unzip this file, then run `bin/engine-sim-app.exe`. The simulator should then start normally.

@@ -19,6 +19,7 @@ public node units {
     // Mass
     output kg: 1.0;
     output g: kg / 1000.0;
+    output mg: g / 1000.0;
 
     output lb: 0.45359237 * kg;
 

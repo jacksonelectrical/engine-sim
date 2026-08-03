@@ -18,6 +18,7 @@ namespace es_script {
         static const piranha::ChannelType CylinderHeadChannel;
         static const piranha::ChannelType CamshaftChannel;
         static const piranha::ChannelType IgnitionModuleChannel;
+        static const piranha::ChannelType DieselInjectionModuleChannel;
         static const piranha::ChannelType IgnitionWireChannel;
         static const piranha::ChannelType FuelChannel;
         static const piranha::ChannelType ImpulseResponseChannel;
@@ -52,6 +53,7 @@ namespace es_script {
     ASSIGN_CHANNEL_TYPE(CylinderHeadNode, CylinderHeadChannel);
     ASSIGN_CHANNEL_TYPE(CamshaftNode, CamshaftChannel);
     ASSIGN_CHANNEL_TYPE(IgnitionModuleNode, IgnitionModuleChannel);
+    ASSIGN_CHANNEL_TYPE(DieselInjectionModuleNode, DieselInjectionModuleChannel);
     ASSIGN_CHANNEL_TYPE(IgnitionWireNode, IgnitionWireChannel);
     ASSIGN_CHANNEL_TYPE(FuelNode, FuelChannel);
     ASSIGN_CHANNEL_TYPE(ImpulseResponseNode, ImpulseResponseChannel);

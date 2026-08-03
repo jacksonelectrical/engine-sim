@@ -872,12 +872,16 @@ void EngineSimApplication::processEngineInput() {
     }
 
     if (m_engine.ProcessKeyDown(ysKey::Code::A)) {
-        m_simulator->getEngine()->getIgnitionModule()->m_enabled =
-            !m_simulator->getEngine()->getIgnitionModule()->m_enabled;
+        CombustionEventController *combustionController =
+            m_simulator->getEngine()->getCombustionEventController();
+        combustionController->m_enabled = !combustionController->m_enabled;
 
-        const std::string msg = m_simulator->getEngine()->getIgnitionModule()->m_enabled
-            ? "IGNITION ENABLED"
-            : "IGNITION DISABLED";
+        const bool isDiesel = combustionController->getType()
+            == CombustionEventController::Type::CompressionIgnition;
+        const std::string systemName = isDiesel ? "FUEL SYSTEM" : "IGNITION";
+        const std::string msg = combustionController->m_enabled
+            ? systemName + " ENABLED"
+            : systemName + " DISABLED";
         m_infoCluster->setLogMessage(msg);
     }
 

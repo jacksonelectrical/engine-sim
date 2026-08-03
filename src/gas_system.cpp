@@ -70,16 +70,34 @@ void GasSystem::changeMix(const Mix &mix) {
 }
 
 void GasSystem::injectFuel(double n) {
+    if (n <= 0.0) return;
+
+    const double initialTemperature = temperature();
+    const double initial_n = this->n();
+    const double next_n = initial_n + n;
+
     const double n_fuel = this->n_fuel() + n;
-    const double p_fuel = n_fuel / this->n();
-    m_state.mix.p_fuel = p_fuel;
+    const double n_inert = this->n_inert();
+    const double n_o2 = this->n_o2();
+
+    m_state.n_mol = next_n;
+    m_state.mix.p_fuel = n_fuel / next_n;
+    m_state.mix.p_inert = n_inert / next_n;
+    m_state.mix.p_o2 = n_o2 / next_n;
+    m_state.E_k +=
+        0.5 * m_degreesOfFreedom * n * constants::R * initialTemperature;
 }
 
 void GasSystem::changeTemperature(double dT, double n) {
     m_state.E_k += dT * 0.5 * m_degreesOfFreedom * n * constants::R;
 }
 
-double GasSystem::react(double n, const Mix &mix) {
+double GasSystem::react(
+    double n,
+    const Mix &mix,
+    double oxygenMolesPerFuelMole,
+    double productMolesPerReactantMole)
+{
     const double l_n_fuel = mix.p_fuel * n;
     const double l_n_o2 = mix.p_o2 * n;
 
@@ -88,11 +106,9 @@ double GasSystem::react(double n, const Mix &mix) {
     const double system_n_inert = n_inert();
     const double system_n = this->n();
 
-    // Assuming the following reaction:
-    // 25[O2] + 2[C8H16] -> 16[CO2] + 18[H2O]
-    constexpr double ideal_o2_ratio = 25.0 / 2;
-    constexpr double ideal_fuel_ratio = 2.0 / 25;
-    constexpr double output_input_ratio = (16.0 + 18.0) / (25 + 2);
+    const double ideal_o2_ratio = oxygenMolesPerFuelMole;
+    const double ideal_fuel_ratio = 1.0 / ideal_o2_ratio;
+    const double output_input_ratio = productMolesPerReactantMole;
 
     const double ideal_fuel_n = ideal_fuel_ratio * l_n_o2;
     const double ideal_o2_n = ideal_o2_ratio * l_n_fuel;
@@ -126,6 +142,41 @@ double GasSystem::react(double n, const Mix &mix) {
     }
 
     return a_n_fuel;
+}
+
+double GasSystem::reactFuel(
+    double fuelMoles,
+    double oxygenMolesPerFuelMole,
+    double productMolesPerReactantMole)
+{
+    if (fuelMoles <= 0.0 || oxygenMolesPerFuelMole <= 0.0) return 0.0;
+
+    const double system_n_fuel = n_fuel();
+    const double system_n_o2 = n_o2();
+    const double system_n_inert = n_inert();
+    const double system_n = this->n();
+
+    const double fuelReacted = std::fmin(
+        std::fmin(system_n_fuel, fuelMoles),
+        system_n_o2 / oxygenMolesPerFuelMole);
+    const double oxygenReacted = fuelReacted * oxygenMolesPerFuelMole;
+    const double reactants_n = fuelReacted + oxygenReacted;
+    const double products_n = productMolesPerReactantMole * reactants_n;
+    const double dn = products_n - reactants_n;
+
+    m_state.n_mol += dn;
+
+    const double new_system_n = system_n + dn;
+    if (new_system_n != 0.0) {
+        m_state.mix.p_fuel = (system_n_fuel - fuelReacted) / new_system_n;
+        m_state.mix.p_inert = (system_n_inert + products_n) / new_system_n;
+        m_state.mix.p_o2 = (system_n_o2 - oxygenReacted) / new_system_n;
+    }
+    else {
+        m_state.mix.p_fuel = m_state.mix.p_inert = m_state.mix.p_o2 = 0.0;
+    }
+
+    return fuelReacted;
 }
 
 double GasSystem::flowConstant(

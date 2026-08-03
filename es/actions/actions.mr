@@ -191,6 +191,39 @@ public node add_ignition_module {
     _add_ignition_module(ignition_module: ignition_module, engine: this)
 }
 
+public node _connect_injector => __engine_sim__connect_diesel_injector {
+    input wire [ignition_wire];
+    input diesel_injection_module [diesel_injection_module];
+    input angle [float];
+}
+
+public node connect_injector {
+    input wire;
+    input angle;
+    input this;
+    alias output __out: this;
+
+    _connect_injector(
+        wire: wire,
+        angle: angle,
+        diesel_injection_module: this)
+}
+
+private node _add_diesel_injection_module => __engine_sim__add_diesel_injection_module {
+    input diesel_injection_module [diesel_injection_module];
+    input engine [engine];
+}
+
+public node add_diesel_injection_module {
+    input diesel_injection_module;
+    input this;
+    alias output __out: this;
+
+    _add_diesel_injection_module(
+        diesel_injection_module: diesel_injection_module,
+        engine: this)
+}
+
 public node _generate_harmonic_cam_lobe => __engine_sim__generate_harmonic_cam_lobe {
     input duration_at_50_thou [float];
     input gamma [float];

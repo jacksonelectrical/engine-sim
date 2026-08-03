@@ -252,7 +252,7 @@ void OscilloscopeCluster::update(float dt) {
 
         m_sparkAdvanceScope->addDataPoint(
             -engine->getCrankshaft(0)->m_body.v_theta,
-            engine->getIgnitionModule()->getTimingAdvance());
+            engine->getCombustionEventController()->getTimingAdvance());
     }
 
     m_updateTimer -= dt;

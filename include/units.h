@@ -12,6 +12,7 @@ namespace units {
     // Mass
     extern constexpr double kg = 1.0;
     extern constexpr double g = kg / 1000.0;
+    extern constexpr double mg = g / 1000.0;
 
     extern constexpr double lb = 0.45359237 * kg;
 

@@ -1,0 +1,40 @@
+name: Diesel simulation CI
+
+on:
+  push:
+    branches:
+      - diesel-simulator
+  pull_request:
+
+jobs:
+  windows-tests:
+    runs-on: windows-2025
+
+    steps:
+      - name: Check out source and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install native dependencies
+        shell: pwsh
+        run: >-
+          vcpkg install
+          sdl2:x64-windows
+          sdl2-image:x64-windows
+          boost-filesystem:x64-windows
+          winflexbison:x64-windows
+
+      - name: Configure
+        shell: pwsh
+        run: >-
+          cmake -S . -B build
+          -A x64
+          -DDISCORD_ENABLED=OFF
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build tests
+        run: cmake --build build --config Release --target engine-sim-test
+
+      - name: Run tests
+        run: ctest --test-dir build -C Release --output-on-failure

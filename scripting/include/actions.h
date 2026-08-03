@@ -14,6 +14,7 @@
 #include "cylinder_head_node.h"
 #include "cylinder_bank_node.h"
 #include "ignition_module_node.h"
+#include "diesel_injection_module_node.h"
 #include "transmission_node.h"
 #include "vehicle_node.h"
 
@@ -415,6 +416,57 @@ namespace es_script {
 
     protected:
         IgnitionModuleNode *m_ignitionModule = nullptr;
+        EngineNode *m_engine = nullptr;
+    };
+
+    class ConnectDieselInjectorNode : public Node {
+    public:
+        ConnectDieselInjectorNode() { /* void */ }
+        virtual ~ConnectDieselInjectorNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("wire", &m_wire, InputTarget::Type::Object);
+            addInput("diesel_injection_module", &m_module, InputTarget::Type::Object);
+            addInput("angle", &m_angle);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+            m_module->connect(m_wire, m_angle);
+        }
+
+    protected:
+        IgnitionWireNode *m_wire = nullptr;
+        DieselInjectionModuleNode *m_module = nullptr;
+        double m_angle = 0.0;
+    };
+
+    class AddDieselInjectionModuleNode : public Node {
+    public:
+        AddDieselInjectionModuleNode() { /* void */ }
+        virtual ~AddDieselInjectionModuleNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("engine", &m_engine, InputTarget::Type::Object);
+            addInput(
+                "diesel_injection_module",
+                &m_dieselInjectionModule,
+                InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+            m_engine->addDieselInjectionModule(m_dieselInjectionModule);
+        }
+
+    protected:
+        DieselInjectionModuleNode *m_dieselInjectionModule = nullptr;
         EngineNode *m_engine = nullptr;
     };
 

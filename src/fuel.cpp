@@ -10,6 +10,8 @@ Fuel::Fuel() {
     m_density = 0.0;
     m_turbulenceToFlameSpeedRatio = nullptr;
     m_molecularAfr = 0.0;
+    m_molecularOxygenRatio = 0.0;
+    m_productMoleRatio = 0.0;
     m_maxBurningEfficiency = 0.0;
     m_maxDilutionEffect = 0.0;
     m_maxTurbulenceEffect = 0.0;
@@ -27,6 +29,8 @@ void Fuel::initialize(const Parameters &params) {
     m_density = params.density;
     m_turbulenceToFlameSpeedRatio = params.turbulenceToFlameSpeedRatio;
     m_molecularAfr = params.molecularAfr;
+    m_molecularOxygenRatio = params.molecularOxygenRatio;
+    m_productMoleRatio = params.productMoleRatio;
     m_burningEfficiencyRandomness = params.burningEfficiencyRandomness;
     m_maxBurningEfficiency = params.maxBurningEfficiency;
     m_maxDilutionEffect = params.maxDilutionEffect;

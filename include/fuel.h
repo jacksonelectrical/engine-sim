@@ -18,6 +18,8 @@ class Fuel {
             double density =
                 units::mass(0.755, units::kg) / units::volume(1.0, units::L);
             double molecularAfr = 25 / 2.0;
+            double molecularOxygenRatio = 25.0 / 2.0;
+            double productMoleRatio = (16.0 + 18.0) / (25.0 + 2.0);
             double burningEfficiencyRandomness = 0.5;
             double lowEfficiencyAttenuation = 0.6;
             double maxBurningEfficiency = 0.8;
@@ -50,6 +52,8 @@ class Fuel {
         virtual double laminarBurningVelocity(double molecularAfr, double T, double P) const;
 
         double getMolecularAfr() const { return m_molecularAfr; }
+        double getMolecularOxygenRatio() const { return m_molecularOxygenRatio; }
+        double getProductMoleRatio() const { return m_productMoleRatio; }
 
     protected:
         std::string m_name;
@@ -57,6 +61,8 @@ class Fuel {
         double m_energyDensity;
         double m_density;
         double m_molecularAfr;
+        double m_molecularOxygenRatio;
+        double m_productMoleRatio;
         double m_maxBurningEfficiency;
         double m_burningEfficiencyRandomness;
         double m_lowEfficiencyAttenuation;

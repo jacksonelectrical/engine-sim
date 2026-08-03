@@ -6,6 +6,7 @@
 #include "crankshaft_node.h"
 #include "cylinder_bank_node.h"
 #include "ignition_module_node.h"
+#include "diesel_injection_module_node.h"
 #include "engine_context.h"
 #include "fuel_node.h"
 #include "throttle_nodes.h"
@@ -105,7 +106,12 @@ namespace es_script {
                 m_cylinderBanks[i]->connectRodAssemblies(&context);
             }
 
-            m_ignitionModule->generate(engine, &context);
+            if (m_dieselInjectionModule != nullptr) {
+                m_dieselInjectionModule->generate(engine, &context);
+            }
+            else {
+                m_ignitionModule->generate(engine, &context);
+            }
             
             Function *meanPistonSpeedToTurbulence = new Function;
             meanPistonSpeedToTurbulence->initialize(30, 1);
@@ -147,6 +153,14 @@ namespace es_script {
 
         void addIgnitionModule(IgnitionModuleNode *ignitionModule) {
             m_ignitionModule = ignitionModule;
+            m_dieselInjectionModule = nullptr;
+        }
+
+        void addDieselInjectionModule(
+            DieselInjectionModuleNode *dieselInjectionModule)
+        {
+            m_dieselInjectionModule = dieselInjectionModule;
+            m_ignitionModule = nullptr;
         }
 
     protected:
@@ -177,6 +191,7 @@ namespace es_script {
 
         ThrottleNode *m_throttle = nullptr;
         IgnitionModuleNode *m_ignitionModule = nullptr;
+        DieselInjectionModuleNode *m_dieselInjectionModule = nullptr;
         FuelNode *m_fuel = nullptr;
 
         Engine::Parameters m_parameters;

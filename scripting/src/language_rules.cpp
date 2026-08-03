@@ -7,6 +7,7 @@
 #include "../include/camshaft_node.h"
 #include "../include/cylinder_head_node.h"
 #include "../include/ignition_module_node.h"
+#include "../include/diesel_injection_module_node.h"
 #include "../include/impulse_response_node.h"
 #include "../include/standard_valvetrain_node.h"
 #include "../include/vtec_valvetrain_node.h"
@@ -60,6 +61,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__exhaust_system_channel", &es_script::ObjectChannel::ExhaustSystemChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__ignition_module_channel", &es_script::ObjectChannel::IgnitionModuleChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__diesel_injection_module_channel", &es_script::ObjectChannel::DieselInjectionModuleChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__ignition_wire_channel", &es_script::ObjectChannel::IgnitionWireChannel);
     registerBuiltinType<piranha::ChannelNode>(
@@ -140,6 +143,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<SetCylinderHeadNode>("__engine_sim__set_cylinder_head");
     registerBuiltinType<ConnectIgnitionWireNode>("__engine_sim__connect_ignition_wire");
     registerBuiltinType<AddIgnitionModuleNode>("__engine_sim__add_ignition_module");
+    registerBuiltinType<ConnectDieselInjectorNode>("__engine_sim__connect_diesel_injector");
+    registerBuiltinType<AddDieselInjectionModuleNode>("__engine_sim__add_diesel_injection_module");
     registerBuiltinType<k_28inH2ONode>("__engine_sim__k_28inH2O");
     registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
     registerBuiltinType<GenerateHarmonicCamLobeNode>("__engine_sim__generate_harmonic_cam_lobe");
@@ -161,6 +166,7 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<ExhaustSystemNode>("__engine_sim__exhaust_system");
     registerBuiltinType<IntakeNode>("__engine_sim__intake");
     registerBuiltinType<IgnitionModuleNode>("__engine_sim__ignition_module");
+    registerBuiltinType<DieselInjectionModuleNode>("__engine_sim__diesel_injection_module");
     registerBuiltinType<IgnitionWireNode>("__engine_sim__ignition_wire");
     registerBuiltinType<FuelNode>("__engine_sim__fuel");
     registerBuiltinType<ImpulseResponseNode>("__engine_sim__impulse_response");
