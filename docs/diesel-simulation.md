@@ -66,7 +66,10 @@ The automated tests cover:
 - fuel cut above the configured diesel speed limit;
 - ignition-delay response to temperature, pressure, and cetane number;
 - bounded, monotonic two-stage heat release;
-- compilation and construction of the reference diesel script.
+- compilation and construction of the reference diesel script;
+- scheduled direct injection, chamber heat release, fuel accounting, and the
+  pressure-rise audio signal in the reference diesel configuration;
+- compilation and construction of the stock gasoline script.
 
 Before calibration changes are accepted, also check:
 

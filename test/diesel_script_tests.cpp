@@ -34,10 +34,14 @@ TEST(DieselScriptTests, ReferenceConfigurationCompilesAndBuildsDieselEngine) {
         CombustionEventController *controller =
             engine->getCombustionEventController();
 
+        GasSystem::Mix compressedAir;
+        compressedAir.p_inert = 0.75;
+        compressedAir.p_o2 = 0.25;
         chamber->m_system.initialize(
             units::pressure(30.0, units::atm),
             chamber->getVolume(),
-            units::kelvin(900.0));
+            units::kelvin(900.0),
+            compressedAir);
         crankshaft->m_body.v_theta = -units::rpm(1200.0);
         engine->setThrottle(0.0);
         controller->m_enabled = true;
@@ -83,6 +87,37 @@ TEST(DieselScriptTests, ReferenceConfigurationCompilesAndBuildsDieselEngine) {
             EXPECT_GT(chamber->getLastTimestepDieselPressureRise(), 0.0);
             EXPECT_TRUE(std::isfinite(chamber->m_system.pressure()));
         }
+    }
+
+    compiler.destroy();
+    if (output.engine != nullptr) {
+        output.engine->destroy();
+        delete output.engine;
+    }
+    delete output.transmission;
+    delete output.vehicle;
+}
+
+TEST(DieselScriptTests, StockGasolineConfigurationStillCompiles) {
+    es_script::Compiler compiler;
+    compiler.initialize();
+
+    const bool compiled = compiler.compile("../assets/main.mr");
+    EXPECT_TRUE(compiled);
+    if (!compiled) {
+        compiler.destroy();
+        return;
+    }
+
+    const es_script::Compiler::Output output = compiler.execute();
+    EXPECT_NE(output.engine, nullptr);
+    EXPECT_NE(output.transmission, nullptr);
+    EXPECT_NE(output.vehicle, nullptr);
+    if (output.engine != nullptr) {
+        EXPECT_EQ(
+            output.engine->getCombustionEventController()->getType(),
+            CombustionEventController::Type::SparkIgnition);
+        EXPECT_FALSE(output.engine->getIntake(0)->m_directInjection);
     }
 
     compiler.destroy();
