@@ -34,6 +34,19 @@ class Intake : public Part {
 
             // Velocity decay factor
             double VelocityDecay = 0.5;
+
+            // Maximum compressor outlet pressure above atmosphere
+            double MaxBoostPressure = 0.0;
+
+            // Engine speed range over which boost becomes available
+            double SpoolStartSpeed = units::rpm(1000.0);
+            double SpoolFullSpeed = units::rpm(3000.0);
+
+            // First-order compressor response time
+            double SpoolTime = units::sec * 0.4;
+
+            // Adiabatic compressor efficiency
+            double CompressorEfficiency = 0.72;
         };
 
     public:
@@ -44,12 +57,24 @@ class Intake : public Part {
         virtual void destroy();
 
         void process(double dt);
+        void setEngineSpeed(double speed) { m_engineSpeed = speed; }
+        void setBoostCommand(double command);
 
         inline double getRunnerFlowRate() const { return m_runnerFlowRate; }
         inline double getThrottlePlatePosition() const { return m_idleThrottlePlatePosition * m_throttle; }
         inline double getRunnerLength() const { return m_runnerLength; }
         inline double getPlenumCrossSectionArea() const { return m_crossSectionArea; }
         inline double getVelocityDecay() const { return m_velocityDecay; }
+        inline double getBoostPressure() const { return m_boostPressure; }
+        inline double getCompressorOutletPressure() const {
+            return units::pressure(1.0, units::atm) + m_boostPressure;
+        }
+        inline double getCompressorOutletTemperature() const {
+            return m_compressorOutletTemperature;
+        }
+        inline bool isForcedInductionEnabled() const {
+            return m_maxBoostPressure > 0.0;
+        }
 
         GasSystem m_system;
         double m_throttle;
@@ -68,6 +93,16 @@ class Intake : public Part {
         double m_idleThrottlePlatePosition;
         double m_runnerLength;
         double m_velocityDecay;
+
+        double m_maxBoostPressure;
+        double m_spoolStartSpeed;
+        double m_spoolFullSpeed;
+        double m_spoolTime;
+        double m_compressorEfficiency;
+        double m_engineSpeed;
+        double m_boostCommand;
+        double m_boostPressure;
+        double m_compressorOutletTemperature;
 
         GasSystem m_atmosphere;
 };

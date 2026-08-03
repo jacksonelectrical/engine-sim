@@ -59,17 +59,19 @@ jobs:
       - name: Package application
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force package/bin, package/assets, package/delta | Out-Null
+          New-Item -ItemType Directory -Force package/bin, package/assets, package/delta, package/es | Out-Null
           Copy-Item build/Release/engine-sim-app.exe package/bin/
           Copy-Item build/Release/engine-sim-app.map package/bin/
           Copy-Item build/Release/*.dll package/bin/ -ErrorAction SilentlyContinue
           Copy-Item configuration/delta.conf package/bin/
           Copy-Item assets/* package/assets/ -Recurse
+          Copy-Item es/* package/es/ -Recurse
           Copy-Item dependencies/submodules/delta-studio/engines/basic/* package/delta/ -Recurse
           $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
           $visualStudio = & $vswhere -latest -products * -property installationPath
           $crtDirectory = Get-ChildItem "$visualStudio/VC/Redist/MSVC" -Recurse -Directory |
             Where-Object { $_.FullName -match '[\\/]x64[\\/]Microsoft\.VC\d+\.CRT$' } |
+            Sort-Object { [version]$_.Parent.Parent.Name } -Descending |
             Select-Object -First 1
           if ($null -eq $crtDirectory) {
             throw "Microsoft Visual C++ x64 runtime directory was not found"
@@ -82,10 +84,16 @@ jobs:
             'https://download.microsoft.com/download/8/4/a/84a35bf1-dafe-4ae8-82af-ad2ae20b6b14/directx_Jun2010_redist.exe' `
             -OutFile $directXRedist
           & tar.exe -xf $directXRedist -C $directXFiles `
-            Jun2010_d3dx10_43_x64.cab Jun2010_d3dx11_43_x64.cab
+            Jun2010_D3DCompiler_43_x64.cab `
+            Jun2010_d3dx10_43_x64.cab `
+            Jun2010_d3dx11_43_x64.cab
+          & expand.exe "$directXFiles/Jun2010_D3DCompiler_43_x64.cab" -F:D3DCompiler_43.dll package/bin
           & expand.exe "$directXFiles/Jun2010_d3dx10_43_x64.cab" -F:d3dx10_43.dll package/bin
           & expand.exe "$directXFiles/Jun2010_d3dx11_43_x64.cab" -F:d3dx11_43.dll package/bin
-          if (-not (Test-Path package/bin/d3dx10_43.dll) -or -not (Test-Path package/bin/d3dx11_43.dll)) {
+          if (
+            -not (Test-Path package/bin/D3DCompiler_43.dll) `
+            -or -not (Test-Path package/bin/d3dx10_43.dll) `
+            -or -not (Test-Path package/bin/d3dx11_43.dll)) {
             throw 'Required DirectX runtime libraries were not extracted'
           }
 

@@ -20,6 +20,11 @@
 #include <stdlib.h>
 #include <sstream>
 
+#ifdef _WIN32
+#include <delta-studio/include/yds_windows_window.h>
+#include <commdlg.h>
+#endif
+
 #if ATG_ENGINE_SIM_DISCORD_ENABLED
 #include "../discord/Discord.h"
 #endif
@@ -355,11 +360,14 @@ void EngineSimApplication::run() {
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Return)) {
-            m_audioSource->SetMode(ysAudioSource::Mode::Stop);
-            loadScript();
-            if (m_simulator->getEngine() != nullptr) {
-                m_audioSource->SetMode(ysAudioSource::Mode::Loop);
-            }
+            reloadScript();
+        }
+
+        if (
+            m_engine.ProcessKeyDown(ysKey::Code::L)
+            && selectScriptPath())
+        {
+            reloadScript();
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
@@ -440,11 +448,16 @@ void EngineSimApplication::loadEngine(
     Vehicle *vehicle,
     Transmission *transmission)
 {
+    if (engine == nullptr || vehicle == nullptr || transmission == nullptr) {
+        return;
+    }
+
     destroyObjects();
 
     if (m_simulator != nullptr) {
         m_simulator->releaseSimulation();
         delete m_simulator;
+        m_simulator = nullptr;
     }
 
     if (m_vehicle != nullptr) {
@@ -467,13 +480,6 @@ void EngineSimApplication::loadEngine(
     m_transmission = transmission;
 
     m_simulator = engine->createSimulator(vehicle, transmission);
-
-    if (engine == nullptr || vehicle == nullptr || transmission == nullptr) {
-        m_iceEngine = nullptr;
-        m_viewParameters.Layer1 = 0;
-
-        return;
-    }
 
     createObjects(engine);
 
@@ -616,15 +622,16 @@ const SimulationObject::ViewParameters &
     return m_viewParameters;
 }
 
-void EngineSimApplication::loadScript() {
+bool EngineSimApplication::loadScript() {
     Engine *engine = nullptr;
     Vehicle *vehicle = nullptr;
     Transmission *transmission = nullptr;
+    bool compiled = false;
 
 #ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
     es_script::Compiler compiler;
     compiler.initialize();
-    const bool compiled = compiler.compile(m_scriptPath);
+    compiled = compiler.compile(m_scriptPath);
     if (compiled) {
         const es_script::Compiler::Output output = compiler.execute();
         configure(output.applicationSettings);
@@ -641,6 +648,12 @@ void EngineSimApplication::loadScript() {
 
     compiler.destroy();
 #endif /* ATG_ENGINE_SIM_PIRANHA_ENABLED */
+
+    if (!compiled || engine == nullptr) {
+        delete vehicle;
+        delete transmission;
+        return false;
+    }
 
     if (vehicle == nullptr) {
         Vehicle::Parameters vehParams;
@@ -666,6 +679,55 @@ void EngineSimApplication::loadScript() {
 
     loadEngine(engine, vehicle, transmission);
     refreshUserInterface();
+
+    return true;
+}
+
+bool EngineSimApplication::reloadScript() {
+    if (m_audioSource != nullptr) {
+        m_audioSource->SetMode(ysAudioSource::Mode::Stop);
+    }
+
+    const bool loaded = loadScript();
+    if (
+        m_audioSource != nullptr
+        && m_simulator != nullptr
+        && m_simulator->getEngine() != nullptr)
+    {
+        m_audioSource->SetMode(ysAudioSource::Mode::Loop);
+    }
+
+    if (m_infoCluster != nullptr) {
+        m_infoCluster->setLogMessage(
+            loaded
+                ? "ENGINE LOADED: " + m_scriptPath
+                : "ENGINE LOAD FAILED; CURRENT ENGINE KEPT");
+    }
+
+    return loaded;
+}
+
+bool EngineSimApplication::selectScriptPath() {
+#ifdef _WIN32
+    char filename[MAX_PATH] = {};
+    OPENFILENAMEA dialog = {};
+    dialog.lStructSize = sizeof(dialog);
+    dialog.hwndOwner = static_cast<ysWindowsWindow *>(
+        m_engine.GetGameWindow())->GetWindowHandle();
+    dialog.lpstrFilter =
+        "Engine Simulator scripts (*.mr)\0*.mr\0All files (*.*)\0*.*\0";
+    dialog.lpstrFile = filename;
+    dialog.nMaxFile = MAX_PATH;
+    dialog.lpstrInitialDir = "../assets";
+    dialog.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+
+    if (GetOpenFileNameA(&dialog) != FALSE) {
+        m_scriptPath = filename;
+        return true;
+    }
+#endif
+
+    return false;
 }
 
 void EngineSimApplication::processEngineInput() {

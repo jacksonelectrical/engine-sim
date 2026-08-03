@@ -91,7 +91,9 @@ class EngineSimApplication {
         ApplicationSettings* getAppSettings() { return &m_applicationSettings; }
 
     protected:
-        void loadScript();
+        bool loadScript();
+        bool reloadScript();
+        bool selectScriptPath();
         void processEngineInput();
         void renderScene();
 

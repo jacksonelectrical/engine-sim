@@ -2,6 +2,7 @@
 
 #include "../include/units.h"
 
+#include <algorithm>
 #include <cmath>
 
 Intake::Intake() {
@@ -16,6 +17,16 @@ Intake::Intake() {
     m_totalFuelInjected = 0;
     m_molecularAfr = 0;
     m_runnerLength = 0;
+    m_velocityDecay = 0;
+    m_maxBoostPressure = 0;
+    m_spoolStartSpeed = 0;
+    m_spoolFullSpeed = 0;
+    m_spoolTime = 0;
+    m_compressorEfficiency = 1.0;
+    m_engineSpeed = 0;
+    m_boostCommand = 0;
+    m_boostPressure = 0;
+    m_compressorOutletTemperature = units::celcius(25.0);
 }
 
 Intake::~Intake() {
@@ -52,10 +63,24 @@ void Intake::initialize(Parameters &params) {
     m_crossSectionArea = params.CrossSectionArea;
     m_velocityDecay = params.VelocityDecay;
     m_runnerFlowRate = params.RunnerFlowRate;
+    m_maxBoostPressure = std::max(0.0, params.MaxBoostPressure);
+    m_spoolStartSpeed = std::max(0.0, params.SpoolStartSpeed);
+    m_spoolFullSpeed = std::max(m_spoolStartSpeed, params.SpoolFullSpeed);
+    m_spoolTime = std::max(0.0, params.SpoolTime);
+    m_compressorEfficiency = std::clamp(
+        params.CompressorEfficiency,
+        0.01,
+        1.0);
+    m_boostPressure = 0.0;
+    m_compressorOutletTemperature = units::celcius(25.0);
 }
 
 void Intake::destroy() {
     /* void */
+}
+
+void Intake::setBoostCommand(double command) {
+    m_boostCommand = std::clamp(command, 0.0, 1.0);
 }
 
 void Intake::process(double dt) {
@@ -78,6 +103,44 @@ void Intake::process(double dt) {
     const double throttle = getThrottlePlatePosition();
     const double flowAttenuation = std::cos(throttle * constants::pi / 2);
 
+    double spoolFraction = 0.0;
+    if (m_spoolFullSpeed <= m_spoolStartSpeed) {
+        spoolFraction = m_engineSpeed >= m_spoolStartSpeed ? 1.0 : 0.0;
+    }
+    else {
+        spoolFraction = std::clamp(
+            (m_engineSpeed - m_spoolStartSpeed)
+                / (m_spoolFullSpeed - m_spoolStartSpeed),
+            0.0,
+            1.0);
+    }
+
+    const double targetBoost =
+        m_maxBoostPressure * spoolFraction * m_boostCommand;
+    if (m_spoolTime <= 0.0) {
+        m_boostPressure = targetBoost;
+    }
+    else {
+        const double response = 1.0 - std::exp(-dt / m_spoolTime);
+        m_boostPressure += (targetBoost - m_boostPressure) * response;
+    }
+    m_boostPressure = std::clamp(
+        m_boostPressure,
+        0.0,
+        m_maxBoostPressure);
+
+    constexpr double heatCapacityRatio = 1.4;
+    const double inletPressure = units::pressure(1.0, units::atm);
+    const double inletTemperature = units::celcius(25.0);
+    const double pressureRatio =
+        (inletPressure + m_boostPressure) / inletPressure;
+    m_compressorOutletTemperature = inletTemperature * (
+        1.0
+        + (std::pow(
+            pressureRatio,
+            (heatCapacityRatio - 1.0) / heatCapacityRatio) - 1.0)
+            / m_compressorEfficiency);
+
     GasSystem::FlowParameters flowParams;
     flowParams.crossSectionArea_0 = units::area(10, units::m2);
     flowParams.crossSectionArea_1 = m_crossSectionArea;
@@ -85,13 +148,19 @@ void Intake::process(double dt) {
     flowParams.direction_y = -1.0;
     flowParams.dt = dt;
 
-    m_atmosphere.reset(units::pressure(1.0, units::atm), units::celcius(25.0), fuelAirMix);
+    m_atmosphere.reset(
+        inletPressure + m_boostPressure,
+        m_compressorOutletTemperature,
+        fuelAirMix);
     flowParams.system_0 = &m_atmosphere;
     flowParams.system_1 = &m_system;
     flowParams.k_flow = flowAttenuation * m_inputFlowK;
     m_flow = m_system.flow(flowParams);
 
-    m_atmosphere.reset(units::pressure(1.0, units::atm), units::celcius(25.0), fuelMix);
+    m_atmosphere.reset(
+        inletPressure + m_boostPressure,
+        m_compressorOutletTemperature,
+        fuelMix);
     flowParams.system_0 = &m_atmosphere;
     flowParams.system_1 = &m_system;
     flowParams.k_flow = m_idleFlowK;

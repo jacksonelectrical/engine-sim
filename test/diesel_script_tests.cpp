@@ -27,6 +27,7 @@ TEST(DieselScriptTests, ReferenceConfigurationCompilesAndBuildsDieselEngine) {
             output.engine->getCombustionEventController()->getType(),
             CombustionEventController::Type::CompressionIgnition);
         EXPECT_TRUE(output.engine->getIntake(0)->m_directInjection);
+        EXPECT_TRUE(output.engine->getIntake(0)->isForcedInductionEnabled());
 
         Engine *engine = output.engine;
         Crankshaft *crankshaft = engine->getOutputCrankshaft();
@@ -118,6 +119,7 @@ TEST(DieselScriptTests, StockGasolineConfigurationStillCompiles) {
             output.engine->getCombustionEventController()->getType(),
             CombustionEventController::Type::SparkIgnition);
         EXPECT_FALSE(output.engine->getIntake(0)->m_directInjection);
+        EXPECT_FALSE(output.engine->getIntake(0)->isForcedInductionEnabled());
     }
 
     compiler.destroy();

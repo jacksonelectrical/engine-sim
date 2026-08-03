@@ -6,6 +6,7 @@
 #include "../include/fuel.h"
 #include "../include/piston_engine_simulator.h"
 
+#include <algorithm>
 #include <cmath>
 #include <assert.h>
 
@@ -154,6 +155,7 @@ void Engine::setThrottle(double throttle) {
             == CombustionEventController::Type::CompressionIgnition;
     for (int i = 0; i < m_intakeCount; ++i) {
         m_intakes[i].m_throttle = isDiesel ? 0.0 : throttle;
+        m_intakes[i].setBoostCommand(std::clamp(1.0 - throttle, 0.0, 1.0));
     }
 
     m_throttleValue = throttle;
@@ -307,6 +309,10 @@ double Engine::getIntakeFlowRate() const {
 
 void Engine::update(double dt) {
     m_throttle->update(dt, this);
+    const double speed = getSpeed();
+    for (int i = 0; i < m_intakeCount; ++i) {
+        m_intakes[i].setEngineSpeed(speed);
+    }
 }
 
 double Engine::getManifoldPressure() const {

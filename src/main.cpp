@@ -14,6 +14,12 @@ int WINAPI WinMain(
 
     EngineSimApplication application;
     std::string scriptPath = lpCmdLine != nullptr ? lpCmdLine : "";
+    const std::string whitespace = " \t\r\n";
+    const std::size_t first = scriptPath.find_first_not_of(whitespace);
+    const std::size_t last = scriptPath.find_last_not_of(whitespace);
+    scriptPath = first == std::string::npos
+        ? ""
+        : scriptPath.substr(first, last - first + 1);
     if (
         scriptPath.size() >= 2
         && scriptPath.front() == '"'

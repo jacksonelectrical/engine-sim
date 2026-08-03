@@ -495,6 +495,11 @@ public node intake_parameters {
     input runner_length: 4.0 * units.inch;
     input runner_flow_rate: k_carb(200.0);
     input velocity_decay: 0.25;
+    input max_boost_pressure: 0.0 * units.kPa;
+    input spool_start_rpm: 1000.0 * units.rpm;
+    input spool_full_rpm: 3000.0 * units.rpm;
+    input spool_time: 0.4 * units.sec;
+    input compressor_efficiency: 0.72;
 }
 
 private node _intake => __engine_sim__intake {
@@ -508,6 +513,11 @@ private node _intake => __engine_sim__intake {
     input throttle_gamma [float];
     input runner_length [float];
     input velocity_decay [float];
+    input max_boost_pressure [float];
+    input spool_start_rpm [float];
+    input spool_full_rpm [float];
+    input spool_time [float];
+    input compressor_efficiency [float];
     alias output __out [intake_channel];
 }
 
@@ -523,6 +533,11 @@ public node intake {
     input throttle_gamma: parameters.throttle_gamma;
     input runner_length: parameters.runner_length;
     input velocity_decay: parameters.velocity_decay;
+    input max_boost_pressure: parameters.max_boost_pressure;
+    input spool_start_rpm: parameters.spool_start_rpm;
+    input spool_full_rpm: parameters.spool_full_rpm;
+    input spool_time: parameters.spool_time;
+    input compressor_efficiency: parameters.compressor_efficiency;
     alias output __out [_intake]:
         _intake(
             plenum_volume: plenum_volume,
@@ -534,7 +549,12 @@ public node intake {
             idle_throttle_plate_position: idle_throttle_plate_position,
             throttle_gamma: throttle_gamma,
             runner_length: runner_length,
-            velocity_decay: velocity_decay
+            velocity_decay: velocity_decay,
+            max_boost_pressure: max_boost_pressure,
+            spool_start_rpm: spool_start_rpm,
+            spool_full_rpm: spool_full_rpm,
+            spool_time: spool_time,
+            compressor_efficiency: compressor_efficiency
         );
 }
 

@@ -38,6 +38,11 @@ namespace es_script {
             addInput("throttle_gamma", &m_throttleGammaUnused);
             addInput("runner_length", &m_parameters.RunnerLength);
             addInput("velocity_decay", &m_parameters.VelocityDecay);
+            addInput("max_boost_pressure", &m_parameters.MaxBoostPressure);
+            addInput("spool_start_rpm", &m_parameters.SpoolStartSpeed);
+            addInput("spool_full_rpm", &m_parameters.SpoolFullSpeed);
+            addInput("spool_time", &m_parameters.SpoolTime);
+            addInput("compressor_efficiency", &m_parameters.CompressorEfficiency);
 
             ObjectReferenceNode<IntakeNode>::registerInputs();
         }

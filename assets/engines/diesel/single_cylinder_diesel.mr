@@ -74,7 +74,12 @@ public node single_cylinder_diesel {
         intake_flow_rate: k_carb(180.0),
         idle_flow_rate: k_carb(0.0),
         idle_throttle_plate_position: 1.0,
-        velocity_decay: 0.35
+        velocity_decay: 0.35,
+        max_boost_pressure: 12.0 * units.psi,
+        spool_start_rpm: 900 * units.rpm,
+        spool_full_rpm: 2200 * units.rpm,
+        spool_time: 0.35 * units.sec,
+        compressor_efficiency: 0.72
     )
 
     exhaust_system_parameters exhaust_params(

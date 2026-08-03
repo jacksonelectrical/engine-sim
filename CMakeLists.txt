@@ -287,6 +287,7 @@ endif ()
 
 target_link_libraries(engine-sim-app
     engine-sim
+    comdlg32
 )
 
 if (DTV)
@@ -321,6 +322,7 @@ add_executable(engine-sim-test
     test/backward_compatibility_tests.cpp
     test/diesel_combustion_model_tests.cpp
     test/diesel_injection_module_tests.cpp
+    test/forced_induction_tests.cpp
     test/gas_system_tests.cpp
     test/function_test.cpp
     test/synthesizer_tests.cpp

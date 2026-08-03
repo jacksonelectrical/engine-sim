@@ -3,6 +3,22 @@
 This fork adds a compression-ignition path while preserving the original
 spark-ignition path.
 
+## Forced induction
+
+The intake model supports optional forced induction. A zero
+`max_boost_pressure` keeps the original naturally aspirated behavior. Set the
+following `intake` inputs to enable a simplified compressor model:
+
+- `max_boost_pressure`: wastegate-limited gauge pressure.
+- `spool_start_rpm`: engine speed where boost starts.
+- `spool_full_rpm`: engine speed where full boost is available.
+- `spool_time`: first-order response time for boost rise and decay.
+- `compressor_efficiency`: adiabatic efficiency from 0.01 to 1.0.
+
+The model scales boost with engine speed and driver load. It also raises the
+compressor outlet temperature from the pressure ratio. The reference diesel
+uses 12 psi maximum boost.
+
 The model is intended for real-time engine response and sound. It is not an
 engineering combustion or emissions tool.
 
