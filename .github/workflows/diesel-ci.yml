@@ -19,7 +19,21 @@ jobs:
       - name: Install Flex and Bison
         shell: pwsh
         run: |
-          choco install winflexbison3 --yes --no-progress
+          $installed = $false
+          for ($attempt = 1; $attempt -le 4; $attempt++) {
+            choco install winflexbison3 --yes --no-progress
+            if ($LASTEXITCODE -eq 0) {
+              $installed = $true
+              break
+            }
+            if ($attempt -lt 4) {
+              Write-Warning "Chocolatey failed; retrying in 20 seconds"
+              Start-Sleep -Seconds 20
+            }
+          }
+          if (-not $installed) {
+            throw "Chocolatey could not install winflexbison3 after four attempts"
+          }
           $flex = (Get-Command win_flex.exe -ErrorAction Stop).Source
           $bison = (Get-Command win_bison.exe -ErrorAction Stop).Source
           "FLEX_EXECUTABLE=$flex" | Out-File $env:GITHUB_ENV -Append
