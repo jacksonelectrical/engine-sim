@@ -26,6 +26,7 @@
 #include "delta.h"
 #include "dtv.h"
 
+#include <string>
 #include <vector>
 
 class EngineSimApplication {
@@ -38,6 +39,7 @@ class EngineSimApplication {
 
         static std::string getBuildVersion() { return s_buildVersion; }
 
+        void setScriptPath(const std::string &path) { m_scriptPath = path; }
         void initialize(void *instance, ysContextObject::DeviceAPI api);
         void run();
         void destroy();
@@ -122,6 +124,7 @@ class EngineSimApplication {
         dbasic::AssetManager m_assetManager;
 
         std::string m_assetPath;
+        std::string m_scriptPath;
 
         ysRenderTarget *m_mainRenderTarget;
         ysGPUBuffer *m_geometryVertexBuffer;

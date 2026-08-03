@@ -1,6 +1,7 @@
 #include "../include/engine_sim_application.h"
 
 #include <iostream>
+#include <string>
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
@@ -9,10 +10,20 @@ int WINAPI WinMain(
     _In_ int nCmdShow)
 {
     (void)nCmdShow;
-    (void)lpCmdLine;
     (void)hPrevInstance;
 
     EngineSimApplication application;
+    std::string scriptPath = lpCmdLine != nullptr ? lpCmdLine : "";
+    if (
+        scriptPath.size() >= 2
+        && scriptPath.front() == '"'
+        && scriptPath.back() == '"')
+    {
+        scriptPath = scriptPath.substr(1, scriptPath.size() - 2);
+    }
+    if (!scriptPath.empty()) {
+        application.setScriptPath(scriptPath);
+    }
     application.initialize((void *)&hInstance, ysContextObject::DeviceAPI::DirectX11);
     application.run();
     application.destroy();

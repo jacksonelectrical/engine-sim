@@ -54,6 +54,11 @@ Important inputs are:
 
 See `assets/engines/diesel/single_cylinder_diesel.mr` for the engine definition.
 `assets/diesel-main.mr` is its executable script entry point.
+From the packaged `bin` directory, start it with:
+
+```powershell
+.\engine-sim-app.exe "../assets/diesel-main.mr"
+```
 
 ## Validation
 

@@ -28,6 +28,7 @@ std::string EngineSimApplication::s_buildVersion = "0.1.12a";
 
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
+    m_scriptPath = "../assets/main.mr";
 
     m_geometryVertexBuffer = nullptr;
     m_geometryIndexBuffer = nullptr;
@@ -623,7 +624,7 @@ void EngineSimApplication::loadScript() {
 #ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
     es_script::Compiler compiler;
     compiler.initialize();
-    const bool compiled = compiler.compile("../assets/main.mr");
+    const bool compiled = compiler.compile(m_scriptPath);
     if (compiled) {
         const es_script::Compiler::Output output = compiler.execute();
         configure(output.applicationSettings);
