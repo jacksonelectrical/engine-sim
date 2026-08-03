@@ -80,9 +80,10 @@ jobs:
           Invoke-WebRequest `
             'https://download.microsoft.com/download/8/4/a/84a35bf1-dafe-4ae8-82af-ad2ae20b6b14/directx_Jun2010_redist.exe' `
             -OutFile $directXRedist
-          & $directXRedist /Q /T:$directXFiles
-          & expand.exe "$directXFiles/Jun2010_D3DX10_43_x64.cab" -F:d3dx10_43.dll package/bin
-          & expand.exe "$directXFiles/Jun2010_D3DX11_43_x64.cab" -F:d3dx11_43.dll package/bin
+          & tar.exe -xf $directXRedist -C $directXFiles `
+            Jun2010_d3dx10_43_x64.cab Jun2010_d3dx11_43_x64.cab
+          & expand.exe "$directXFiles/Jun2010_d3dx10_43_x64.cab" -F:d3dx10_43.dll package/bin
+          & expand.exe "$directXFiles/Jun2010_d3dx11_43_x64.cab" -F:d3dx11_43.dll package/bin
           if (-not (Test-Path package/bin/d3dx10_43.dll) -or -not (Test-Path package/bin/d3dx11_43.dll)) {
             throw 'Required DirectX runtime libraries were not extracted'
           }
