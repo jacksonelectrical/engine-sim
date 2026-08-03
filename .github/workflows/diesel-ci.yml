@@ -65,6 +65,15 @@ jobs:
           Copy-Item configuration/delta.conf package/bin/
           Copy-Item assets/* package/assets/ -Recurse
           Copy-Item dependencies/submodules/delta-studio/engines/basic/* package/delta/ -Recurse
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $visualStudio = & $vswhere -latest -products * -property installationPath
+          $crtDirectory = Get-ChildItem "$visualStudio/VC/Redist/MSVC" -Recurse -Directory |
+            Where-Object { $_.FullName -match '[\\/]x64[\\/]Microsoft\.VC\d+\.CRT$' } |
+            Select-Object -First 1
+          if ($null -eq $crtDirectory) {
+            throw "Microsoft Visual C++ x64 runtime directory was not found"
+          }
+          Copy-Item "$($crtDirectory.FullName)/*.dll" package/bin/
 
       - name: Upload application
         uses: actions/upload-artifact@v4
