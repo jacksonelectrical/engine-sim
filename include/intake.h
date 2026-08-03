@@ -5,8 +5,6 @@
 
 #include "gas_system.h"
 
-#include <algorithm>
-
 class Intake : public Part {
     public:
         struct Parameters {
@@ -70,7 +68,7 @@ class Intake : public Part {
         void process(double dt);
         void setEngineSpeed(double speed) { m_engineSpeed = speed; }
         void setExhaustFlowRate(double flowRate) {
-            m_exhaustFlowRate = std::max(0.0, flowRate);
+            m_exhaustFlowRate = flowRate > 0.0 ? flowRate : 0.0;
         }
         void setBoostCommand(double command);
         double sampleTurboSound(double dt);
