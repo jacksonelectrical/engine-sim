@@ -8,6 +8,7 @@
 #include "../include/exhaust_system.h"
 #include "../include/cylinder_bank.h"
 #include "../include/engine.h"
+#include "../include/diesel_combustion_model.h"
 
 #include <cmath>
 
@@ -387,23 +388,11 @@ void CombustionChamber::flow(double dt) {
 double CombustionChamber::calculateDieselIgnitionDelay(
     const CombustionEventController::Event &event) const
 {
-    const double T = std::fmax(m_system.temperature(), units::kelvin(300.0));
-    const double P = std::fmax(
+    return DieselCombustionModel::ignitionDelay(
+        event.ignitionDelay,
+        m_system.temperature(),
         m_system.pressure(),
-        units::pressure(1.0, units::atm));
-    const double cetane = std::fmax(event.cetaneNumber, 1.0);
-
-    const double temperatureFactor =
-        std::exp(2200.0 * (1.0 / T - 1.0 / units::kelvin(850.0)));
-    const double pressureFactor = std::pow(
-        units::pressure(40.0, units::atm) / P,
-        0.7);
-    const double cetaneFactor = 50.0 / cetane;
-
-    return clamp(
-        event.ignitionDelay * temperatureFactor * pressureFactor * cetaneFactor,
-        0.0001 * units::sec,
-        0.0500 * units::sec);
+        event.cetaneNumber);
 }
 
 void CombustionChamber::updateDieselCombustion(double dt) {
@@ -450,31 +439,22 @@ void CombustionChamber::updateDieselCombustion(double dt) {
         const double lastBurnAngle = event.burnAngle;
         event.burnAngle += dTheta;
 
-        const auto wiebe = [](double x) {
-            const double clampedX = clamp(x);
-            return 1.0 - std::exp(-6.9 * std::pow(clampedX, 3.0));
-        };
-
         const double premixedDuration = event.command.premixedBurnDuration;
         const double diffusionDuration = event.command.diffusionBurnDuration;
-        const double premixedFraction = clamp(event.command.premixedBurnFraction);
-
-        const double lastPremixed = premixedDuration > 0.0
-            ? wiebe(lastBurnAngle / premixedDuration)
-            : 1.0;
-        const double nextPremixed = premixedDuration > 0.0
-            ? wiebe(event.burnAngle / premixedDuration)
-            : 1.0;
-        const double lastDiffusion = diffusionDuration > 0.0
-            ? wiebe(lastBurnAngle / diffusionDuration)
-            : 1.0;
-        const double nextDiffusion = diffusionDuration > 0.0
-            ? wiebe(event.burnAngle / diffusionDuration)
-            : 1.0;
-
+        const double lastBurnFraction =
+            DieselCombustionModel::stagedBurnFraction(
+                lastBurnAngle,
+                event.command.premixedBurnFraction,
+                premixedDuration,
+                diffusionDuration);
+        const double nextBurnFraction =
+            DieselCombustionModel::stagedBurnFraction(
+                event.burnAngle,
+                event.command.premixedBurnFraction,
+                premixedDuration,
+                diffusionDuration);
         const double scheduledFraction =
-            premixedFraction * (nextPremixed - lastPremixed)
-            + (1.0 - premixedFraction) * (nextDiffusion - lastDiffusion);
+            std::fmax(0.0, nextBurnFraction - lastBurnFraction);
         event.scheduledBurnFuelMoles +=
             event.totalFuelMoles * scheduledFraction;
 

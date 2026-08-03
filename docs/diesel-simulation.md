@@ -61,7 +61,10 @@ The automated tests cover:
 - mole, composition, and temperature conservation during direct injection;
 - fuel-specific diesel stoichiometry;
 - per-cylinder injection event timing and driver-demand fuel quantity;
-- fuel cut above the configured diesel speed limit.
+- fuel cut above the configured diesel speed limit;
+- ignition-delay response to temperature, pressure, and cetane number;
+- bounded, monotonic two-stage heat release;
+- compilation and construction of the reference diesel script.
 
 Before calibration changes are accepted, also check:
 

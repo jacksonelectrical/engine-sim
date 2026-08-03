@@ -56,6 +56,7 @@ add_library(engine-sim STATIC
     src/cylinder_head.cpp
     src/delay_filter.cpp
     src/derivative_filter.cpp
+    src/diesel_combustion_model.cpp
     src/diesel_injection_module.cpp
     src/direct_throttle_linkage.cpp
     src/dynamometer.cpp
@@ -102,6 +103,7 @@ add_library(engine-sim STATIC
     include/cylinder_head.h
     include/delay_filter.h
     include/derivative_filter.h
+    include/diesel_combustion_model.h
     include/diesel_injection_module.h
     include/direct_throttle_linkage.h
     include/dynamometer.h
@@ -311,6 +313,7 @@ enable_testing()
 
 add_executable(engine-sim-test
     # Source files
+    test/diesel_combustion_model_tests.cpp
     test/diesel_injection_module_tests.cpp
     test/gas_system_tests.cpp
     test/function_test.cpp
@@ -321,6 +324,15 @@ target_link_libraries(engine-sim-test
     gtest_main
     engine-sim
 )
+
+if (PIRANHA_ENABLED)
+    target_sources(engine-sim-test PRIVATE
+        test/diesel_script_tests.cpp
+    )
+    target_link_libraries(engine-sim-test
+        engine-sim-script-interpreter
+    )
+endif (PIRANHA_ENABLED)
 
 include(GoogleTest)
 gtest_discover_tests(engine-sim-test)
