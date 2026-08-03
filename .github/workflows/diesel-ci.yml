@@ -70,7 +70,10 @@ jobs:
           $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
           $visualStudio = & $vswhere -latest -products * -property installationPath
           $crtDirectory = Get-ChildItem "$visualStudio/VC/Redist/MSVC" -Recurse -Directory |
-            Where-Object { $_.FullName -match '[\\/]x64[\\/]Microsoft\.VC\d+\.CRT$' } |
+            Where-Object {
+              $_.FullName -match '[\\/]x64[\\/]Microsoft\.VC\d+\.CRT$' `
+                -and $_.FullName -notmatch '[\\/]onecore[\\/]'
+            } |
             Sort-Object { [version]$_.Parent.Parent.Name } -Descending |
             Select-Object -First 1
           if ($null -eq $crtDirectory) {
