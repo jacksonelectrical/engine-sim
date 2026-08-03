@@ -16,8 +16,7 @@ This fork includes an experimental, backward-compatible compression-ignition
 simulation. It adds cylinder-direct injection, ignition delay, staged diesel
 heat release, fuel-demand control, fuel cut, configurable fuel chemistry, and
 pressure-rise audio. See [the diesel simulation guide](docs/diesel-simulation.md)
-and the reference engine in
-`assets/engines/diesel/single_cylinder_diesel.mr`.
+and the runnable `assets/diesel-main.mr` example.
 
 ## How do I install it?
 

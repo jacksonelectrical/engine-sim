@@ -52,7 +52,8 @@ Important inputs are:
   durations in crank angle.
 - `combustion_noise`: cylinder pressure-rise contribution to engine audio.
 
-See `assets/engines/diesel/single_cylinder_diesel.mr` for a complete example.
+See `assets/engines/diesel/single_cylinder_diesel.mr` for the engine definition.
+`assets/diesel-main.mr` is its executable script entry point.
 
 ## Validation
 

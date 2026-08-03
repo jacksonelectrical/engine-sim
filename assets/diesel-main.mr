@@ -1,0 +1,4 @@
+import "engine_sim.mr"
+import "engines/diesel/single_cylinder_diesel.mr"
+
+main()

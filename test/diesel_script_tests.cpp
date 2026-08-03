@@ -6,8 +6,7 @@ TEST(DieselScriptTests, ReferenceConfigurationCompilesAndBuildsDieselEngine) {
     es_script::Compiler compiler;
     compiler.initialize();
 
-    const bool compiled = compiler.compile(
-        "../assets/engines/diesel/single_cylinder_diesel.mr");
+    const bool compiled = compiler.compile("../assets/diesel-main.mr");
     EXPECT_TRUE(compiled);
     if (!compiled) {
         compiler.destroy();
